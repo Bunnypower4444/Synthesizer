@@ -52,11 +52,16 @@ public class Soundfont
         if (riffID != "RIFF")
             throw new Exception("Invalid soundfont file");
 
-        // skip the file size
-        reader.SkipBytes(8);
+        int fileSize = reader.ReadInt32();
+
+        // check if file size + 8 matches actual size
+        // if not, file is invalid
 
         // form type...? soundfont file doesn't have i think
-        // Log.Info(reader.ReadFourCC());
+        // nevermind, I forgot file size is 4 bytes not 8
+        string formType = reader.ReadFourCC();
+        
+        // check if form type is a soundfont
         
         var soundfont = new Soundfont();
         var chunkLookup = new Dictionary<string, (int Size, long Position)>();
