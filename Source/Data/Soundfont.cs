@@ -15,6 +15,7 @@ public class Soundfont
         public const string SoundfontFormatVersion  = "ifil";
         public const string TargetEngine            = "isng";
         public const string SoundfontName           = "INAM";
+        //      rest of INFO is optional
         public const string ROMName                 = "irom";
         public const string ROMVersion              = "iver";
         public const string DateOfCreation          = "ICRD";
@@ -25,21 +26,52 @@ public class Soundfont
         public const string Tools                   = "ISFT";
 
         //  sdta
+        //      optional
         public const string Samples                 = "smpl";
         
-        // pdta
+        //  pdta
         public const string PresetHeaders           = "phdr";
         public const string PresetIndices           = "pbag";
+        public const string PresetModulators           = "pmod";
+        public const string PresetGenerators           = "pgen";
+        public const string Instuments           = "inst";
+        public const string InstrumentIndices           = "ibag";
+        public const string InstrumentModulators           = "imod";
+        public const string InstrumentGenerators           = "igen";
+        public const string SampleHeaders           = "shdr";
     }
 
-    // version (ifil, iver): is it a number or string?
+    // Info
+    public required float FormatVersion;
+    public required string TargetEngine;
+    public required string Name;
+    public string? ROMName;
+    public float? ROMVersion;
+    public string? DateOfCreation;
+    public string? DesignersAndEngineers;
+    public string? ProductFor;
+    public string? Copyright;
+    public string? Comments;
+    public string? Tools;
 
+    // Sample data
+    // public string Samples                 = "smpl";
     
+    // Preset data
+    // public required string PresetHeaders
+    // public required string PresetIndices
+    // public required string PresetModulators;
+    // public required string PresetGenerators;
+    // public required string Instuments;
+    // public required string InstrumentIndices;
+    // public required string InstrumentModulators;
+    // public required string InstrumentGenerators;
+    // public required string SampleHeaders;
 
 
 
 
-    public static Soundfont LoadFile(string path)
+    public static void LoadFile(string path)
     {
         if (Path.GetExtension(path) == ".sf3" || Path.GetExtension(path) == ".sfz")
             throw new Exception($"Unsupported soundfont file type ({Path.GetExtension(path)})");
@@ -56,14 +88,16 @@ public class Soundfont
 
         // check if file size + 8 matches actual size
         // if not, file is invalid
+        if (fileSize + 8 != new FileInfo(path).Length)
+            throw new Exception("Soundfont file is corrupted: file size does not match");
 
         // form type...? soundfont file doesn't have i think
         // nevermind, I forgot file size is 4 bytes not 8
-        string formType = reader.ReadFourCC();
-        
         // check if form type is a soundfont
+        string formType = reader.ReadFourCC();
+        if (formType != "sfbk")
+            throw new Exception("Invalid soundfont file");
         
-        var soundfont = new Soundfont();
         var chunkLookup = new Dictionary<string, (int Size, long Position)>();
 
         while (reader.BaseStream.Position < reader.BaseStream.Length)
@@ -85,17 +119,28 @@ public class Soundfont
                     int subchunkSize = reader.ReadInt32();
                     long subchunkPosition = reader.BaseStream.Position;
                     
-                    chunkLookup.Add(chunkType, (subchunkSize, subchunkPosition));
+                    chunkLookup.Add(subchunkID, (subchunkSize, subchunkPosition));
                     
+                    // skip to next chunk
+                    reader.SkipBytes(subchunkSize);
+
                     // add padding to 2 byte boundary
                     if (reader.BaseStream.Position % 2 != 0)
                         reader.SkipBytes(1);
                 }
-                
-                // add padding to 2 byte boundary
-                if (reader.BaseStream.Position % 2 != 0)
-                    reader.SkipBytes(1);
             }
+
+            // go to next chunk
+            reader.BaseStream.Position = position + chunkSize;
+
+            // add padding to 2 byte boundary
+            if (reader.BaseStream.Position % 2 != 0)
+                reader.SkipBytes(1);
+        }
+
+        foreach (var keyValue in chunkLookup)
+        {
+            Log.Info(keyValue.Key + ": " + keyValue.Value);
         }
         
         /* while (reader.BaseStream.Position < reader.BaseStream.Length)
@@ -126,6 +171,6 @@ public class Soundfont
             // reader.BaseStream.Position = chunkOffset + 12 + size;
         }*/
 
-        return soundfont;
+        // return soundfont;
     }
 }

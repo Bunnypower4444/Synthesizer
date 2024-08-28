@@ -10,10 +10,6 @@ public class Program
 
     public static void Run()
     {
-        var soundfont = Assets.Soundfonts["MuseScore_General"];
-        foreach (var keyValue in soundfont.Chunks)
-        {
-            Log.Info(keyValue.Key + ": " + keyValue.Value.Size);
-        }
+        // var soundfont = Assets.Soundfonts["MuseScore_General"];
     }
 }
