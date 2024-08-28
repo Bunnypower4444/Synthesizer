@@ -3,12 +3,6 @@ namespace Synthesizer;
 
 public class Soundfont
 {
-    public readonly struct Chunk(int size, long chunkOffset)
-    {
-        public readonly int Size = size;
-        public readonly long ChunkOffset = chunkOffset;
-    }
-
     public static class ChunkName
     {
         // LEVEL 0
@@ -61,13 +55,12 @@ public class Soundfont
         // skip the file size
         reader.SkipBytes(8);
 
-        // form type...?
+        // form type...? soundfont file doesn't have i think
         // Log.Info(reader.ReadFourCC());
         
         var soundfont = new Soundfont();
-        
-        Dictionary<string, Chunk> chunkLookup = [("RIFF", new(0, 12))];
-        
+        var chunkLookup = new Dictionary<string, (int Size, long Position)>();
+
         while (reader.BaseStream.Position < reader.BaseStream.Length)
         {
             string chunkID = reader.ReadFourCC();
@@ -75,19 +68,19 @@ public class Soundfont
             long position = reader.BaseStream.Position;
             string chunkType = reader.ReadFourCC();
             
-            Dictionary.Add(chunkType, new(chunkSize, position));
+            chunkLookup.Add(chunkType, (chunkSize, position));
             
             // LIST chunks may contain subchunks
             if (chunkID == "LIST")
             {
-                while (reader.BaseStream.Position < position + size)
+                while (reader.BaseStream.Position < position + chunkSize)
                 {
                     // subchunks do not have a chunk type, just their chunk id and size
                     string subchunkID = reader.ReadFourCC();
-                    int chunkSize = reader.ReadInt32();
+                    int subchunkSize = reader.ReadInt32();
                     long subchunkPosition = reader.BaseStream.Position;
                     
-                    Dictionary.Add(chunkType, position);
+                    chunkLookup.Add(chunkType, (subchunkSize, subchunkPosition));
                     
                     // add padding to 2 byte boundary
                     if (reader.BaseStream.Position % 2 != 0)
@@ -99,6 +92,34 @@ public class Soundfont
                     reader.SkipBytes(1);
             }
         }
+        
+        /* while (reader.BaseStream.Position < reader.BaseStream.Length)
+        {
+            string chunkID = reader.ReadFourCC();
+            int chunkSize = reader.ReadInt32();
+            long position = reader.BaseStream.Position;
+            string chunkType = reader.ReadFourCC();
+            Log.Info(chunkID + "-" + chunkType + ":" + chunkOffset);
+
+            soundfont.Chunks.TryAdd(chunkType, new(size, chunkOffset));
+            // the chunkType is included in the size, so subtract 4 characters
+            reader.BaseStream.Position += size - 4;
+
+            // add padding to 4-byte boundary
+            reader.SkipBytes((4 - reader.BaseStream.Position % 4) % 4);
+
+            /* if (chunkID == "LIST")
+            {
+                long subchunkOffset = reader.BaseStream.Position;
+                string subchunkID = reader.ReadFourCC();
+                Log.Info(subchunkID);
+                int subchunkSize = reader.ReadInt32();
+                soundfont.Chunks.TryAdd(subchunkID, new(subchunkSize, subchunkOffset));
+                reader.BaseStream.Position += subchunkSize;
+            } *
+
+            // reader.BaseStream.Position = chunkOffset + 12 + size;
+        }*/
 
         return soundfont;
     }
