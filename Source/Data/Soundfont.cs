@@ -9,7 +9,41 @@ public class Soundfont
         public readonly long ChunkOffset = chunkOffset;
     }
 
-    public readonly Dictionary<string, Chunk> Chunks = [];
+    public static class ChunkName
+    {
+        // LEVEL 0
+        public const string Info                    = "INFO";
+        public const string SampleData              = "sdta";
+        public const string PresetData              = "pdta";
+        
+        // LEVEL 1
+        //  INFO
+        public const string SoundfontFormatVersion  = "ifil";
+        public const string TargetEngine            = "isng";
+        public const string SoundfontName           = "INAM";
+        public const string ROMName                 = "irom";
+        public const string ROMVersion              = "iver";
+        public const string DateOfCreation          = "ICRD";
+        public const string DesignersAndEngineers   = "IENG";
+        public const string ProductFor              = "IPRD";
+        public const string Copyright               = "ICOP";
+        public const string Comments                = "ICMT";
+        public const string Tools                   = "ISFT";
+
+        //  sdta
+        public const string Samples                 = "smpl";
+        
+        // pdta
+        public const string PresetHeaders           = "phdr";
+        public const string PresetIndices           = "pbag";
+    }
+
+    // version (ifil, iver): is it a number or string?
+
+    
+
+
+
 
     public static Soundfont LoadFile(string path)
     {
@@ -32,32 +66,38 @@ public class Soundfont
         
         var soundfont = new Soundfont();
         
+        Dictionary<string, Chunk> chunkLookup = [("RIFF", new(0, 12))];
+        
         while (reader.BaseStream.Position < reader.BaseStream.Length)
         {
-            long chunkOffset = reader.BaseStream.Position;
             string chunkID = reader.ReadFourCC();
-            int size = reader.ReadInt32();
+            int chunkSize = reader.ReadInt32();
+            long position = reader.BaseStream.Position;
             string chunkType = reader.ReadFourCC();
-            Log.Info(chunkID + "-" + chunkType + ":" + chunkOffset);
-
-            soundfont.Chunks.TryAdd(chunkType, new(size, chunkOffset));
-            // the chunkType is included in the size, so subtract 4 characters
-            reader.BaseStream.Position += size - 4;
-
-            // add padding to 4-byte boundary
-            reader.SkipBytes((4 - reader.BaseStream.Position % 4) % 4);
-
-            /* if (chunkID == "LIST")
+            
+            Dictionary.Add(chunkType, new(chunkSize, position));
+            
+            // LIST chunks may contain subchunks
+            if (chunkID == "LIST")
             {
-                long subchunkOffset = reader.BaseStream.Position;
-                string subchunkID = reader.ReadFourCC();
-                Log.Info(subchunkID);
-                int subchunkSize = reader.ReadInt32();
-                soundfont.Chunks.TryAdd(subchunkID, new(subchunkSize, subchunkOffset));
-                reader.BaseStream.Position += subchunkSize;
-            } */
-
-            // reader.BaseStream.Position = chunkOffset + 12 + size;
+                while (reader.BaseStream.Position < position + size)
+                {
+                    // subchunks do not have a chunk type, just their chunk id and size
+                    string subchunkID = reader.ReadFourCC();
+                    int chunkSize = reader.ReadInt32();
+                    long subchunkPosition = reader.BaseStream.Position;
+                    
+                    Dictionary.Add(chunkType, position);
+                    
+                    // add padding to 2 byte boundary
+                    if (reader.BaseStream.Position % 2 != 0)
+                        reader.SkipBytes(1);
+                }
+                
+                // add padding to 2 byte boundary
+                if (reader.BaseStream.Position % 2 != 0)
+                    reader.SkipBytes(1);
+            }
         }
 
         return soundfont;
