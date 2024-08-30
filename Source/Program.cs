@@ -10,6 +10,7 @@ public class Program
 
     public static void Run()
     {
-        // var soundfont = Assets.Soundfonts["MuseScore_General"];
+        var soundfont = Assets.Soundfonts["MuseScore_General"];
+        Console.WriteLine(soundfont);
     }
 }

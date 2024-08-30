@@ -1,4 +1,6 @@
 
+using System.Text;
+
 namespace Synthesizer;
 
 public class Soundfont
@@ -32,21 +34,21 @@ public class Soundfont
         //  pdta
         public const string PresetHeaders           = "phdr";
         public const string PresetIndices           = "pbag";
-        public const string PresetModulators           = "pmod";
-        public const string PresetGenerators           = "pgen";
-        public const string Instuments           = "inst";
-        public const string InstrumentIndices           = "ibag";
-        public const string InstrumentModulators           = "imod";
-        public const string InstrumentGenerators           = "igen";
+        public const string PresetModulators        = "pmod";
+        public const string PresetGenerators        = "pgen";
+        public const string Instuments              = "inst";
+        public const string InstrumentIndices       = "ibag";
+        public const string InstrumentModulators    = "imod";
+        public const string InstrumentGenerators    = "igen";
         public const string SampleHeaders           = "shdr";
     }
 
     // Info
-    public required float FormatVersion;
+    public required Version FormatVersion;
     public required string TargetEngine;
     public required string Name;
     public string? ROMName;
-    public float? ROMVersion;
+    public Version? ROMVersion;
     public string? DateOfCreation;
     public string? DesignersAndEngineers;
     public string? ProductFor;
@@ -71,7 +73,7 @@ public class Soundfont
 
 
 
-    public static void LoadFile(string path)
+    public static Soundfont LoadFile(string path)
     {
         if (Path.GetExtension(path) == ".sf3" || Path.GetExtension(path) == ".sfz")
             throw new Exception($"Unsupported soundfont file type ({Path.GetExtension(path)})");
@@ -143,6 +145,34 @@ public class Soundfont
             Log.Info(keyValue.Key + ": " + keyValue.Value);
         }
         
+        BinaryReader ReadFrom(string chunkName)
+        {
+            reader.BaseStream.Position = chunkLookup[chunkName].Position;
+            return reader;
+        }
+
+        BinaryReader? TryReadFrom(string chunkName)
+        {
+            if (chunkLookup.ContainsKey(chunkName))
+                return ReadFrom(chunkName);
+            return null;
+        }
+        
+        var soundfont = new Soundfont()
+        {
+            FormatVersion = ReadFrom(ChunkName.SoundfontFormatVersion).ReadVersion(),
+            TargetEngine = ReadFrom(ChunkName.TargetEngine).ReadString(chunkLookup[ChunkName.TargetEngine].Size),
+            Name = TryReadFrom(ChunkName.SoundfontName)?.ReadString(chunkLookup[ChunkName.SoundfontName].Size) ?? "EMU8000",
+            ROMName = TryReadFrom(ChunkName.ROMName)?.ReadString(chunkLookup[ChunkName.ROMName].Size),
+            ROMVersion = TryReadFrom(ChunkName.ROMName)?.ReadVersion(),
+            DateOfCreation = TryReadFrom(ChunkName.DateOfCreation)?.ReadString(chunkLookup[ChunkName.DateOfCreation].Size),
+            DesignersAndEngineers = TryReadFrom(ChunkName.DesignersAndEngineers)?.ReadString(chunkLookup[ChunkName.DesignersAndEngineers].Size),
+            ProductFor = TryReadFrom(ChunkName.ProductFor)?.ReadString(chunkLookup[ChunkName.ProductFor].Size),
+            Copyright = TryReadFrom(ChunkName.Copyright)?.ReadString(chunkLookup[ChunkName.Copyright].Size),
+            Comments = TryReadFrom(ChunkName.Comments)?.ReadString(chunkLookup[ChunkName.Comments].Size),
+            Tools = TryReadFrom(ChunkName.Tools)?.ReadString(chunkLookup[ChunkName.Tools].Size)
+        };
+         
         /* while (reader.BaseStream.Position < reader.BaseStream.Length)
         {
             string chunkID = reader.ReadFourCC();
@@ -171,6 +201,26 @@ public class Soundfont
             // reader.BaseStream.Position = chunkOffset + 12 + size;
         }*/
 
-        // return soundfont;
+        return soundfont;
+    }
+
+    public override string ToString()
+    {
+        static string FormatOptional(string label, string? value)
+            => string.IsNullOrEmpty(value) ? "" : label + ": " + value + "\n";
+
+        return
+            $"Soundfont Version: {FormatVersion}\n" +
+            $"Target Engine: {TargetEngine}\n" +
+            $"Name: {Name} \n" +
+            FormatOptional("ROM Name", ROMName) +
+            FormatOptional("ROM Version", ROMVersion?.ToString()) +
+            FormatOptional("Date of Creation", DateOfCreation) +
+            FormatOptional("Sound Designers and Engineers", DesignersAndEngineers) +
+            FormatOptional("Product For", ProductFor) +
+            FormatOptional("Copyright Message", Copyright) +
+            FormatOptional("Comments", Comments) +
+            FormatOptional("Tools Used", Tools)
+            ;
     }
 }

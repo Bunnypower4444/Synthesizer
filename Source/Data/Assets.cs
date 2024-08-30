@@ -72,8 +72,8 @@ public static class Assets
 			var name = GetResourceName(soundfontPath, file);
 			tasks.Add(Task.Run(() =>
 			{
-				/* var soundfont =  */Soundfont.LoadFile(file);
-				// Soundfonts.Add(name, soundfont);
+				var soundfont = Soundfont.LoadFile(file);
+				Soundfonts.Add(name, soundfont);
 			}));
 		}
 
