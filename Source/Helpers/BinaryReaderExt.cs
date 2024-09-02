@@ -1,6 +1,4 @@
 
-using System.Text;
-
 namespace Synthesizer;
 
 public static class BinaryReaderExt
@@ -17,8 +15,9 @@ public static class BinaryReaderExt
 
     public static Version ReadVersion(this BinaryReader reader)
     {
-        var binary = reader.ReadInt32();
-        return new(binary & 0xFF, binary >> 16);
+        var major = reader.ReadUInt16();
+        var minor = reader.ReadUInt16();
+        return new(major, minor);
     }
 
     public static string ReadString(this BinaryReader reader, int maxLength)
@@ -33,5 +32,13 @@ public static class BinaryReaderExt
         }
 
         return chars.AsSpan().ToString();
+    }
+
+    public static unsafe T ReadStruct<T>(this BinaryReader reader) where T : unmanaged
+    {
+        T it = new();
+        Span<byte> buffer = new(&it, sizeof(T));
+        reader.Read(buffer);
+        return it;
     }
 }
