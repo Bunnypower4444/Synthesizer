@@ -405,9 +405,9 @@ public class Soundfont
         // Preset headers
         List<PresetHeader> presets = [];
         ReadFrom(ChunkName.PresetHeaders);
-        var terminalRecord = default(PresetHeader) with { Name = EOP };
+
         while (reader.BaseStream.Position < chunkLookup[ChunkName.PresetHeaders].Size + chunkLookup[ChunkName.PresetHeaders].Position &&
-            reader.ReadStruct<PresetHeader>() is {} header && !header.Equals(terminalRecord))
+            reader.ReadStruct<PresetHeader>() is {} header && header.Name != EOP)
             presets.Add(header);
         
         var soundfont = new Soundfont()
