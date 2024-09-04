@@ -37,11 +37,11 @@ public class Soundfont
         
         //  pdta
         public const string PresetHeaders           = "phdr";
-        public const string PresetZones           = "pbag";
+        public const string PresetZones             = "pbag";
         public const string PresetModulators        = "pmod";
         public const string PresetGenerators        = "pgen";
-        public const string Instruments              = "inst";
-        public const string InstrumentZones       = "ibag";
+        public const string Instruments             = "inst";
+        public const string InstrumentZones         = "ibag";
         public const string InstrumentModulators    = "imod";
         public const string InstrumentGenerators    = "igen";
         public const string SampleHeaders           = "shdr";
@@ -112,28 +112,61 @@ public class Soundfont
         EndOper = 60
     }
 
+    public enum ModulatorSourceType : byte
+    {
+        None = 0,
+        NoteOnVelocity = 2,
+        NoteOnKeyNumber = 3,
+        PolyPressure = 10,
+        ChannelPressure = 13,
+        PitchWheel = 14,
+        PitchWheelSensitivity = 16
+    }
+
+    public enum ModulatorContinuityType : byte
+    {
+        Linear, Concave, Convex, Switch
+    }
+
     public record struct ModulatorType
     {
         /// <summary>
         /// The raw binary value of the modulator type.
-        /// Bits 0-6: Index
-        /// Bit 7: MIDI Continuous Controller (CC) Flag
-        /// Bit 8: Direction
-        /// Bit 9: Polarity
-        /// Bits 10-15: Type
+        /// <list type="bullet">
+        ///     <item>
+        ///         <term>Bits 0-6</term>
+        ///         <description>Source Index</description>
+        ///     </item>
+        ///     <item>
+        ///         <term>Bits 7</term>
+        ///         <description>MIDI Continuous Controller (CC) Flag</description>
+        ///     </item>
+        ///     <item>
+        ///         <term>Bits 8</term>
+        ///         <description>Direction</description>
+        ///     </item>
+        ///     <item>
+        ///         <term>Bits 9</term>
+        ///         <description>Polarity</description>
+        ///     </item>
+        ///     <item>
+        ///         <term>Bits 10-15</term>
+        ///         <description>Type - Continuity of the the controller</description>
+        ///     </item>
+        /// </list>
         /// </summary>
         public ushort Value;
 
-        public readonly byte SourceIndex => (byte)(Value & 0b01111111);
+        public readonly ModulatorSourceType SourceIndex => (ModulatorSourceType)(Value & 0b01111111);
         public readonly bool ContinuousController => (Value & 0b10000000) > 0;
         public readonly bool Direction => (Value & 0b1_00000000) > 0;
         public readonly bool Polarity => (Value & 0b10_00000000) > 0;
-        public readonly byte Type => (byte)(Value >> 10);
+        public readonly ModulatorContinuityType Type => (ModulatorContinuityType)(Value >> 10);
     }
 
     public enum Transform : ushort
     {
-
+        Linear
     }
 
     public enum SampleLink : ushort
@@ -189,11 +222,11 @@ public class Soundfont
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct Modulator
     {
-        public ModulatorType ModSrcOper;
-        public GeneratorType ModDestOper;
-        public short ModAmount;
-        public ModulatorType ModAmtSrcOper;
-        public Transform ModTransOper;
+        public ModulatorType SrcOper;
+        public GeneratorType DestOper;
+        public short Amount;
+        public ModulatorType AmtSrcOper;
+        public Transform TransOper;
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
