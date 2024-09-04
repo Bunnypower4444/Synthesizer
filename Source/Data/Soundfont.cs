@@ -163,7 +163,7 @@ public class Soundfont
             {
                 fixed (PresetHeader* it = &this)
                 {
-                    return Encoding.UTF8.GetString((byte*)it->RawName, 20);
+                    return Encoding.UTF8.GetString((byte*)it->RawName, 20).TrimEnd('\0');
                 }
             }
             set
@@ -223,7 +223,7 @@ public class Soundfont
             {
                 fixed (Instrument* it = &this)
                 {
-                    return Encoding.UTF8.GetString((byte*)it->RawName, 20);
+                    return Encoding.UTF8.GetString((byte*)it->RawName, 20).TrimEnd('\0');
                 }
             }
             set
@@ -266,7 +266,7 @@ public class Soundfont
             {
                 fixed (Sample* i = &this)
                 {
-                    return Encoding.UTF8.GetString((byte*)i->RawName, 20);
+                    return Encoding.UTF8.GetString((byte*)i->RawName, 20).TrimEnd('\0');
                 }
             }
             set
