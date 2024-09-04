@@ -304,14 +304,14 @@ public class Soundfont
     
     // Preset data
     public required List<PresetHeader> PresetHeaders;
-    // public required List<PresetZone> PresetZones;
-    // public required List<Modulator> PresetModulators;
-    // public required List<Generator> PresetGenerators;
-    // public required List<Instrument> Instuments;
-    // public required List<InstrumentZone> InstrumentZones;
-    // public required List<Modulator> InstrumentModulators;
-    // public required List<Generator> InstrumentGenerators;
-    // public required List<Sample> SampleHeaders;
+    public required List<PresetZone> PresetZones;
+    public required List<Modulator> PresetModulators;
+    public required List<Generator> PresetGenerators;
+    public required List<Instrument> Instruments;
+    public required List<InstrumentZone> InstrumentZones;
+    public required List<Modulator> InstrumentModulators;
+    public required List<Generator> InstrumentGenerators;
+    public required List<Sample> SampleHeaders;
 
     #endregion
 
@@ -400,7 +400,7 @@ public class Soundfont
             return null;
         }
 
-        const string EOP = "EOP\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
+        /* const string EOP = "EOP\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
 
         // Preset headers
         List<PresetHeader> presets = [];
@@ -408,7 +408,28 @@ public class Soundfont
 
         while (reader.BaseStream.Position < chunkLookup[ChunkName.PresetHeaders].Size + chunkLookup[ChunkName.PresetHeaders].Position &&
             reader.ReadStruct<PresetHeader>() is {} header && header.Name != EOP)
-            presets.Add(header);
+            presets.Add(header); */
+
+        List<T> ReadListOf<T>(string chunk) where T : unmanaged
+        {
+            List<T> list = [];
+            ReadFrom(chunk);
+
+            while (reader.BaseStream.Position < chunkLookup[chunk].Size + chunkLookup[chunk].Position)
+                list.Add(reader.ReadStruct<T>());
+            
+            return list;
+        }
+
+        var presets = ReadListOf<PresetHeader>(ChunkName.PresetHeaders);
+        var presetZones = ReadListOf<PresetZone>(ChunkName.PresetZones);
+        var presetModulators = ReadListOf<Modulator>(ChunkName.PresetModulators);
+        var presetGenerators = ReadListOf<Generator>(ChunkName.PresetGenerators);
+        var instruments = ReadListOf<Instrument>(ChunkName.Instruments);
+        var instrumentZones = ReadListOf<InstrumentZone>(ChunkName.InstrumentZones);
+        var instrumentModulators = ReadListOf<Modulator>(ChunkName.InstrumentModulators);
+        var instrumentGenerators = ReadListOf<Generator>(ChunkName.InstrumentGenerators);
+        var sampleHeaders = ReadListOf<Sample>(ChunkName.SampleHeaders);
         
         var soundfont = new Soundfont()
         {
@@ -423,7 +444,15 @@ public class Soundfont
             Copyright = TryReadFrom(ChunkName.Copyright)?.ReadString(chunkLookup[ChunkName.Copyright].Size),
             Comments = TryReadFrom(ChunkName.Comments)?.ReadString(chunkLookup[ChunkName.Comments].Size),
             Tools = TryReadFrom(ChunkName.Tools)?.ReadString(chunkLookup[ChunkName.Tools].Size),
-            PresetHeaders = presets
+            PresetHeaders = presets,
+            PresetZones = presetZones,
+            PresetModulators = presetModulators,
+            PresetGenerators = presetGenerators,
+            Instruments = instruments,
+            InstrumentZones = instrumentZones,
+            InstrumentModulators = instrumentModulators,
+            InstrumentGenerators = instrumentGenerators,
+            SampleHeaders = sampleHeaders
         };
          
         /* while (reader.BaseStream.Position < reader.BaseStream.Length)
