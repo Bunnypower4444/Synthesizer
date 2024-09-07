@@ -1,5 +1,5 @@
 
-namespace Synthesizer.Soundfont;
+namespace Synthesizer;
 
 public enum GeneratorType : ushort
 {

@@ -2,7 +2,7 @@
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace Synthesizer.Soundfont;
+namespace Synthesizer;
 
 public class SoundfontFile
 {
