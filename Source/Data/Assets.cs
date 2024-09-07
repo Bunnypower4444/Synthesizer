@@ -1,5 +1,6 @@
 
 using System.Diagnostics;
+using Synthesizer.Soundfont;
 
 namespace Synthesizer;
 
@@ -43,7 +44,7 @@ public static class Assets
 			return mainFont;
 		}
 	} */
-	public static readonly Dictionary<string, Soundfont> Soundfonts = new(StringComparer.OrdinalIgnoreCase);
+	public static readonly Dictionary<string, SoundfontFile> Soundfonts = new(StringComparer.OrdinalIgnoreCase);
 
     public static bool IsLoaded { get; private set; } = false;
 	public static void Load(Action? callback = null)
@@ -72,7 +73,7 @@ public static class Assets
 			var name = GetResourceName(soundfontPath, file);
 			tasks.Add(Task.Run(() =>
 			{
-				var soundfont = Soundfont.LoadFile(file);
+				var soundfont = SoundfontFile.LoadFile(file);
 				Soundfonts.Add(name, soundfont);
 			}));
 		}
