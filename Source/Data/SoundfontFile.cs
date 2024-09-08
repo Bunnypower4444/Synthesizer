@@ -87,31 +87,6 @@ public class SoundfontFile
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public struct Modulator
-    {
-        public ModulatorType SrcOper;
-        public GeneratorType DestOper;
-        public short Amount;
-        public ModulatorType AmtSrcOper;
-        public Transform TransOper;
-    }
-
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public struct Generator
-    {
-        public GeneratorType GenOper;
-        public GenAmount GenAmount;
-    }
-
-    public struct GenAmount
-    {
-        // Most use the ushort format (but how do you tell what it actaully is???)
-        public ushort UShortValue;
-        public readonly short ShortValue => (short)UShortValue;
-        public readonly (byte Low, byte High) RangeValue => ((byte)(UShortValue >> 8), (byte)(UShortValue & 0xFF));
-    }
-
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public unsafe struct Instrument
     {
         public fixed sbyte RawName[20];
