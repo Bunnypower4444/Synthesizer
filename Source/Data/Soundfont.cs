@@ -3,8 +3,10 @@ using System.Runtime.InteropServices;
 
 namespace Synthesizer;
 
-public class Soundfont
+public class Soundfont : IDisposable
 {
+    public Soundfont() {}
+
     public Soundfont(SoundfontFile file)
     {
         // Fill in all the metadata
@@ -19,6 +21,12 @@ public class Soundfont
         Copyright = file.Copyright;
         Comments = file.Comments;
         Tools = file.Tools;
+
+        // Create the sample loader
+        SampleLoader = new StreamSampleLoader(
+            new FileStream(file.FilePath, FileMode.Open, FileAccess.Read),
+            file.SampleChunkStart, file.SampleChunkSize
+        );
         
         // Parse the presets
         Presets = [];
@@ -163,9 +171,9 @@ public class Soundfont
         return instrument;
     }
 
-    public Version FormatVersion;
-    public string TargetEngine;
-    public string Name;
+    public required Version FormatVersion;
+    public required string TargetEngine;
+    public required string Name;
     public string? ROMName;
     public Version? ROMVersion;
     public string? DateOfCreation;
@@ -175,9 +183,17 @@ public class Soundfont
     public string? Comments;
     public string? Tools;
 
-    public List<Preset> Presets;
+    public required List<Preset> Presets;
 
-    // Add fields
+    public required ISampleLoader SampleLoader;
+
+    ~Soundfont() => Dispose();
+
+    public void Dispose()
+    {
+        GC.SuppressFinalize(this);
+        SampleLoader.Dispose();
+    }
     
     /* public override string ToString()
     {

@@ -4,6 +4,15 @@ namespace Synthesizer;
 public interface ISampleLoader : IDisposable
 {
     public byte[] GetSampleData(Sample sample);
+    public bool SampleIsCached(Sample sample);
+    public void PreloadSample(Sample sample);
+    public void PreloadInstrument(Instrument instrument)
+    {
+        foreach (var zone in instrument.InstrumentZones)
+        {
+            PreloadSample(zone.Sample);
+        }
+    }
 }
 
 /// <summary>
@@ -11,16 +20,31 @@ public interface ISampleLoader : IDisposable
 /// </summary>
 public class StreamSampleLoader : ISampleLoader
 {
-    public StreamSampleLoader(Stream stream, long sampleChunkStart, long sampleChunkSize)
+    public StreamSampleLoader(Stream stream, long sampleChunkStart, int sampleChunkSize)
     {
         Reader = new(stream);
+        SampleChunkStart = sampleChunkStart;
+        SampleChunkSize = sampleChunkSize;
     }
 
     public BinaryReader Reader;
     public long SampleChunkStart;
-    public long SampleChunkSize;
+    public int SampleChunkSize;
+    public Dictionary<long, (int Size, byte[] Data)> Cache = [];
 
     public byte[] GetSampleData(Sample sample)
+    {
+        // TODO
+        throw new NotImplementedException();
+    }
+
+    public bool SampleIsCached(Sample sample)
+    {
+        // TODO
+        throw new NotImplementedException();
+    }
+
+    public void PreloadSample(Sample sample)
     {
         // TODO
         throw new NotImplementedException();

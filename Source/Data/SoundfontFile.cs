@@ -190,6 +190,10 @@ public class SoundfontFile
 
     #endregion
 
+    public required string FilePath;
+    public required long SampleChunkStart;
+    public required int SampleChunkSize;
+
     public static SoundfontFile LoadFile(string path)
     {
         if (Path.GetExtension(path) == ".sf3" || Path.GetExtension(path) == ".sfz")
@@ -197,6 +201,7 @@ public class SoundfontFile
 
         using var stream = new FileStream(path, FileMode.Open, FileAccess.Read);
         using var reader = new BinaryReader(stream);
+
         // NOTE so that I don't forget later: ENCODING IS UTF-8, EACH CHAR IS 1 BYTE
 
         string riffID = reader.ReadFourCC();
@@ -308,6 +313,9 @@ public class SoundfontFile
         
         var soundfont = new SoundfontFile()
         {
+            FilePath = path,
+            SampleChunkStart = chunkLookup[ChunkName.SampleData].Position,
+            SampleChunkSize = chunkLookup[ChunkName.SampleData].Size,
             FormatVersion = ReadFrom(ChunkName.SoundfontFormatVersion).ReadVersion(),
             TargetEngine = ReadFrom(ChunkName.TargetEngine).ReadString(chunkLookup[ChunkName.TargetEngine].Size),
             Name = TryReadFrom(ChunkName.SoundfontName)?.ReadString(chunkLookup[ChunkName.SoundfontName].Size) ?? "EMU8000",
