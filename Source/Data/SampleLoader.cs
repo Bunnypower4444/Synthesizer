@@ -30,7 +30,7 @@ public class StreamSampleLoader : ISampleLoader
     public BinaryReader Reader;
     public long SampleChunkStart;
     public int SampleChunkSize;
-    public Dictionary<long, (int Size, byte[] Data)> Cache = [];
+    private readonly SortedDictionary<long, (int Size, byte[] Data)> cache = [];
 
     public byte[] GetSampleData(Sample sample)
     {
@@ -40,8 +40,18 @@ public class StreamSampleLoader : ISampleLoader
 
     public bool SampleIsCached(Sample sample)
     {
-        // TODO
-        throw new NotImplementedException();
+        var keys = cache.Keys.ToArray();
+        var index = Array.BinarySearch(keys, sample.StartIndex);
+
+        // If sample start index is in between loaded,
+        // Figure out the index of the element that would come BEFORE it (so minus one after inverting)
+        if (index < 0)
+            index = ~index - 1;
+
+        if (index < 0)
+            return false;
+        else
+            return keys[index] + cache[keys[index]].Size >= sample.EndIndex;
     }
 
     public void PreloadSample(Sample sample)
@@ -58,6 +68,6 @@ public class StreamSampleLoader : ISampleLoader
     public void Dispose()
     {
         GC.SuppressFinalize(this);
-        Reader.Dispose();
+        Reader?.Dispose();
     }
 }

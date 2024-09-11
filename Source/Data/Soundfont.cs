@@ -5,8 +5,6 @@ namespace Synthesizer;
 
 public class Soundfont : IDisposable
 {
-    public Soundfont() {}
-
     public Soundfont(SoundfontFile file)
     {
         // Fill in all the metadata
@@ -171,9 +169,9 @@ public class Soundfont : IDisposable
         return instrument;
     }
 
-    public required Version FormatVersion;
-    public required string TargetEngine;
-    public required string Name;
+    public Version FormatVersion;
+    public string TargetEngine;
+    public string Name;
     public string? ROMName;
     public Version? ROMVersion;
     public string? DateOfCreation;
@@ -183,9 +181,9 @@ public class Soundfont : IDisposable
     public string? Comments;
     public string? Tools;
 
-    public required List<Preset> Presets;
+    public List<Preset> Presets;
 
-    public required ISampleLoader SampleLoader;
+    public ISampleLoader SampleLoader;
 
     ~Soundfont() => Dispose();
 
