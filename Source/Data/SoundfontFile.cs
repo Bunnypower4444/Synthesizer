@@ -191,8 +191,8 @@ public class SoundfontFile
     #endregion
 
     public required string FilePath;
-    public required long SampleChunkStart;
-    public required int SampleChunkSize;
+    public required uint SampleChunkStart;
+    public required uint SampleChunkSize;
 
     public static SoundfontFile LoadFile(string path)
     {
@@ -314,8 +314,8 @@ public class SoundfontFile
         var soundfont = new SoundfontFile()
         {
             FilePath = path,
-            SampleChunkStart = chunkLookup[ChunkName.SampleData].Position,
-            SampleChunkSize = chunkLookup[ChunkName.SampleData].Size,
+            SampleChunkStart = (uint)chunkLookup[ChunkName.SampleData].Position,
+            SampleChunkSize = (uint)chunkLookup[ChunkName.SampleData].Size,
             FormatVersion = ReadFrom(ChunkName.SoundfontFormatVersion).ReadVersion(),
             TargetEngine = ReadFrom(ChunkName.TargetEngine).ReadString(chunkLookup[ChunkName.TargetEngine].Size),
             Name = TryReadFrom(ChunkName.SoundfontName)?.ReadString(chunkLookup[ChunkName.SoundfontName].Size) ?? "EMU8000",
