@@ -1,4 +1,10 @@
 
+// Enable this to run StreamSampleLoader tests
+#define StreamSampleLoaderTests
+#if StreamSampleLoaderTests
+    #define CustomMain
+#endif
+
 namespace Synthesizer;
 
 public interface ISampleLoader : IDisposable
@@ -128,4 +134,29 @@ public class StreamSampleLoader : ISampleLoader
         GC.SuppressFinalize(this);
         Reader.Dispose();
     }
+
+    #if StreamSampleLoaderTests
+    
+    public static void Main()
+    {
+        // Use a MemoryStream to provide fake sample data
+        byte[] data = [
+            255, 255, 255, 255, 255, 255,
+            0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+            10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+            20, 21, 22, 23, 24, 25, 26, 27, 28, 29,
+            254, 254, 254, 254, 254, 254, 254, 254
+        ];
+
+        using var stream = new MemoryStream(
+            data,
+            false
+        );
+
+        using var loader = new StreamSampleLoader(stream, 6, 30);
+
+        // add some tests and stuff later
+    }
+
+    #endif
 }
