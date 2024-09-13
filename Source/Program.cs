@@ -17,5 +17,7 @@ public class Program
     {
         var soundfont = Assets.Soundfonts["MuseScore_General"];
         Console.WriteLine(soundfont);
+
+        Assets.Dispose();
     }
 }

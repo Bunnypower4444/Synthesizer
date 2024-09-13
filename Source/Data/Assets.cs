@@ -198,4 +198,10 @@ public static class Assets
 		var normalized = relative.Replace("\\", "/");
 		return normalized;
 	}
+
+	public static void Dispose()
+	{
+		foreach (var soundfont in Soundfonts)
+			soundfont.Dispose();
+	}
 }

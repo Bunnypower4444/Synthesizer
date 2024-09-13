@@ -120,7 +120,7 @@ public record struct ModulatorType
 
 public enum Transform : ushort
 {
-    Linear, Absolute
+    Linear = 0, Absolute = 2
 }
 
 public enum SampleLink : ushort
