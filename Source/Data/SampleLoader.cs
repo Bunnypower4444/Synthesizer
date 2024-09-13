@@ -1,6 +1,6 @@
 
 // Enable this to run StreamSampleLoader tests
-#define StreamSampleLoaderTests
+// #define StreamSampleLoaderTests
 #if StreamSampleLoaderTests
 #define CustomMain
 #endif
@@ -52,7 +52,7 @@ public class StreamSampleLoader : ISampleLoader
             return cache[positionBefore].Data[(int)(sample.StartIndex - positionBefore)..(int)(sample.EndIndex - positionBefore)];
         }
         
-        PreloadSample(sample);
+        PreloadSample(sample, positionBeforeIndex);
         
         var keys = cache.Keys.ToArray();
         var index = Array.BinarySearch(keys, sample.StartIndex);
@@ -85,38 +85,60 @@ public class StreamSampleLoader : ISampleLoader
     }
 
     public void PreloadSample(Sample sample)
+        => PreloadSample(sample, int.MinValue);
+
+    private void PreloadSample(Sample sample, int positionBeforeIndex)
     {
-        if (SampleIsCached(sample, out var positionBeforeIndex))
+        // positionBeforeIndex should be used to speed up code by not having to call SampleIsCached multiple times
+        // MinValue represents the positionBeforeIndex has not been calculated, so check the cache now
+        if (positionBeforeIndex == int.MinValue && SampleIsCached(sample, out positionBeforeIndex))
             return;
 
         if (sample.EndIndex > SampleChunkSize)
             sample.EndIndex = SampleChunkSize;
 
         var keys = cache.Keys.ToArray();
-        var positionBefore = positionBeforeIndex >= 0 ? keys[positionBeforeIndex] : 0;
+        uint? positionBefore = positionBeforeIndex >= 0 ? keys[positionBeforeIndex] : null;
+        uint? positionAfter = positionBeforeIndex + 1 < keys.Length ? keys[positionBeforeIndex + 1] : null;
         
         // Check how much data we actually need to get if some of it is already loaded
         uint loadStartIndex = sample.StartIndex, loadEndIndex = sample.EndIndex;
 
-        if (positionBefore <= sample.StartIndex && cache[positionBefore].Size + positionBefore >= sample.StartIndex)
-            loadStartIndex = cache[positionBefore].Size + positionBefore;
+        /*
+        To see if we can combine with the item before check if:
+         - There is an item before
+         - It ends (start + size) at or after the sample we need to load starts
+            (even if they don't overlap, but are adjacent, we can still combine so >= not >)
+        */
+        if (positionBefore != null
+            && cache[positionBefore.Value].Size + positionBefore >= sample.StartIndex)
+            loadStartIndex = positionBefore.Value;
         
-        if (positionBeforeIndex + 1 < keys.Length
-            && keys[positionBeforeIndex + 1] <= sample.EndIndex
-            && cache[keys[positionBeforeIndex + 1]].Size >= sample.EndIndex - keys[positionBeforeIndex + 1])
-            loadEndIndex = keys[positionBeforeIndex + 1];
+        /*
+        To see if we can combine with the item after check if:
+         - There is an item after
+         - It starts at or before the sample we need to load ends
+            (even if they don't overlap, but are adjacent, we can still combine so <= not <)
+         - It ends at or after the sample we need to load ends
+            (same as above)
+        */
+        if (positionAfter != null
+            && positionAfter <= sample.EndIndex
+            && cache[positionAfter.Value].Size + positionAfter >= sample.EndIndex)
+            loadEndIndex = positionAfter.Value;
 
         // Create the data array, and put existing data at the ends (if applicable)
         uint arrayStartIndex = loadStartIndex != sample.StartIndex
-            ? positionBefore : sample.StartIndex;
+            ? positionBefore!.Value : sample.StartIndex;
         uint arrayEndIndex = loadEndIndex != sample.EndIndex
-            ? keys[positionBeforeIndex + 1] + cache[keys[positionBeforeIndex + 1]].Size : sample.EndIndex;
+            ? positionAfter!.Value + cache[positionAfter.Value].Size : sample.EndIndex;
         
         byte[] data = new byte[arrayEndIndex - arrayStartIndex];
 
+        // The indices will be different if we combined
         if (loadStartIndex != sample.StartIndex)
         {
-            cache[positionBefore].Data.CopyTo(data, 0);
+            cache[positionBefore!.Value].Data.CopyTo(data, 0);
             // Don't have to remove the key because the new data will start from the same spot
         }
 
@@ -148,14 +170,6 @@ public class StreamSampleLoader : ISampleLoader
     }
 
     #if StreamSampleLoaderTests
-
-    /*
-     * Errors
-     Unhandled exception. System.Collections.Generic.KeyNotFoundException: The given key '0' was not present in the dictionary.
-        at System.Collections.Generic.SortedDictionary`2.get_Item(TKey key)
-        at Synthesizer.StreamSampleLoader.PreloadSample(Sample sample) in /Users/yinqian/Desktop/Users/Baaaa/Coding/Java_C#/Synthesizer/Source/Data/SampleLoader.cs:line 101
-        at Synthesizer.StreamSampleLoader.Main() in /Users/yinqian/Desktop/Users/Baaaa/Coding/Java_C#/Synthesizer/Source/Data/SampleLoader.cs:line 175
-     */
     
     public static void Main()
     {
@@ -200,7 +214,11 @@ public class StreamSampleLoader : ISampleLoader
         
         Debug.Assert(loader.GetSampleData(SampleFrom(5, 12)).SequenceEqual(new byte[] {5, 6, 7, 8, 9, 10, 11}));
         Debug.Assert(1 == loader.cache.Count);
-        Debug.Assert(loader.cache[5].Data.SequenceEqual(new byte[] {5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24}));
+        Debug.Assert(loader.cache[2].Data.SequenceEqual(new byte[] {2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24}));
+
+        Debug.Assert(loader.GetSampleData(SampleFrom(0, 5)).SequenceEqual(new byte[] {0, 1, 2, 3, 4}));
+        Debug.Assert(1 == loader.cache.Count);
+        Debug.Assert(loader.cache[0].Data.SequenceEqual(new byte[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24}));
 
         Log.Info("All tests passed for StreamSampleLoader :)");
     }
