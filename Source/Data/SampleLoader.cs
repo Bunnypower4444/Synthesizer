@@ -2,8 +2,10 @@
 // Enable this to run StreamSampleLoader tests
 #define StreamSampleLoaderTests
 #if StreamSampleLoaderTests
-    #define CustomMain
+#define CustomMain
 #endif
+
+using System.Diagnostics;
 
 namespace Synthesizer;
 
@@ -19,6 +21,7 @@ public interface ISampleLoader : IDisposable
             PreloadSample(zone.Sample);
         }
     }
+    public void ClearCache();
 }
 
 /// <summary>
@@ -40,6 +43,9 @@ public class StreamSampleLoader : ISampleLoader
 
     public byte[] GetSampleData(Sample sample)
     {
+        if (sample.EndIndex > SampleChunkSize)
+            sample.EndIndex = SampleChunkSize;
+
         if (SampleIsCached(sample, out var positionBeforeIndex))
         {
             var positionBefore = cache.Keys.ToArray()[positionBeforeIndex];
@@ -83,17 +89,20 @@ public class StreamSampleLoader : ISampleLoader
         if (SampleIsCached(sample, out var positionBeforeIndex))
             return;
 
+        if (sample.EndIndex > SampleChunkSize)
+            sample.EndIndex = SampleChunkSize;
+
         var keys = cache.Keys.ToArray();
         var positionBefore = positionBeforeIndex >= 0 ? keys[positionBeforeIndex] : 0;
         
         // Check how much data we actually need to get if some of it is already loaded
         uint loadStartIndex = sample.StartIndex, loadEndIndex = sample.EndIndex;
 
-        if (positionBefore <= sample.StartIndex && cache[positionBefore].Size + positionBefore > sample.StartIndex)
+        if (positionBefore <= sample.StartIndex && cache[positionBefore].Size + positionBefore >= sample.StartIndex)
             loadStartIndex = cache[positionBefore].Size + positionBefore;
         
         if (positionBeforeIndex + 1 < keys.Length
-            && keys[positionBeforeIndex + 1] < sample.EndIndex
+            && keys[positionBeforeIndex + 1] <= sample.EndIndex
             && cache[keys[positionBeforeIndex + 1]].Size >= sample.EndIndex - keys[positionBeforeIndex + 1])
             loadEndIndex = keys[positionBeforeIndex + 1];
 
@@ -124,6 +133,9 @@ public class StreamSampleLoader : ISampleLoader
         cache[arrayStartIndex] = ((uint)data.Length, data);
     }
 
+    public void ClearCache()
+        => cache.Clear();
+
     ~StreamSampleLoader()
     {
         Dispose();
@@ -136,15 +148,23 @@ public class StreamSampleLoader : ISampleLoader
     }
 
     #if StreamSampleLoaderTests
+
+    /*
+     * Errors
+     Unhandled exception. System.Collections.Generic.KeyNotFoundException: The given key '0' was not present in the dictionary.
+        at System.Collections.Generic.SortedDictionary`2.get_Item(TKey key)
+        at Synthesizer.StreamSampleLoader.PreloadSample(Sample sample) in /Users/yinqian/Desktop/Users/Baaaa/Coding/Java_C#/Synthesizer/Source/Data/SampleLoader.cs:line 101
+        at Synthesizer.StreamSampleLoader.Main() in /Users/yinqian/Desktop/Users/Baaaa/Coding/Java_C#/Synthesizer/Source/Data/SampleLoader.cs:line 175
+     */
     
     public static void Main()
     {
         // Use a MemoryStream to provide fake sample data
         byte[] data = [
             255, 255, 255, 255, 255, 255,
-            0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
-            10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
-            20, 21, 22, 23, 24, 25, 26, 27, 28, 29,
+            0  , 1  , 2  , 3  , 4  , 5  , 6  , 7  , 8  , 9  ,
+            10 , 11 , 12 , 13 , 14 , 15 , 16 , 17 , 18 , 19 ,
+            20 , 21 , 22 , 23 , 24 , 25 , 26 , 27 , 28 , 29 ,
             254, 254, 254, 254, 254, 254, 254, 254
         ];
 
@@ -155,7 +175,34 @@ public class StreamSampleLoader : ISampleLoader
 
         using var loader = new StreamSampleLoader(stream, 6, 30);
 
-        // add some tests and stuff later
+        static Sample SampleFrom(uint start, uint end)
+            => new() { StartIndex = start, EndIndex = end };
+
+        Debug.Assert(false == loader.SampleIsCached(SampleFrom(10, 15)));
+
+        loader.PreloadSample(SampleFrom(10, 20));
+        Debug.Assert(loader.cache.ContainsKey(10));
+        Debug.Assert(loader.cache[10].Size == 10);
+        Debug.Assert(loader.cache[10].Data.SequenceEqual(new byte[] {10, 11, 12, 13, 14, 15, 16, 17, 18, 19}));
+        Debug.Assert(true == loader.SampleIsCached(SampleFrom(10, 20)));
+        Debug.Assert(true == loader.SampleIsCached(SampleFrom(15, 18)));
+        Debug.Assert(false == loader.SampleIsCached(SampleFrom(8, 15)));
+        Debug.Assert(false == loader.SampleIsCached(SampleFrom(12, 22)));
+        Debug.Assert(loader.GetSampleData(SampleFrom(15, 20)).SequenceEqual(new byte[] {15, 16, 17, 18, 19}));
+        Debug.Assert(1 == loader.cache.Count);
+
+        Debug.Assert(loader.GetSampleData(SampleFrom(20, 25)).SequenceEqual(new byte[] {20, 21, 22, 23, 24}));
+        Debug.Assert(1 == loader.cache.Count);
+        Debug.Assert(loader.cache[10].Data.SequenceEqual(new byte[] {10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24}));
+        
+        Debug.Assert(loader.GetSampleData(SampleFrom(2, 5)).SequenceEqual(new byte[] {2, 3, 4}));
+        Debug.Assert(2 == loader.cache.Count);
+        
+        Debug.Assert(loader.GetSampleData(SampleFrom(5, 12)).SequenceEqual(new byte[] {5, 6, 7, 8, 9, 10, 11}));
+        Debug.Assert(1 == loader.cache.Count);
+        Debug.Assert(loader.cache[5].Data.SequenceEqual(new byte[] {5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24}));
+
+        Log.Info("All tests passed for StreamSampleLoader :)");
     }
 
     #endif
