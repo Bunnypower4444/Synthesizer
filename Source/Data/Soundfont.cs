@@ -225,6 +225,11 @@ public struct Preset
     public uint Library;
     public uint Genre;
     public uint Morphology;
+
+    public override readonly string ToString()
+    {
+        return $"{Name}, Preset #{PresetNumber}, Bank #{BankNumber}, {PresetZones.Count} Instruments";
+    }
 }
 
 public struct PresetZone
@@ -232,6 +237,11 @@ public struct PresetZone
     public List<Generator> Generators;
     public List<Modulator>? Modulators;
     public Instrument Instrument;
+
+    public override readonly string ToString()
+    {
+        return Instrument.Name;
+    }
 }
 
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
@@ -265,6 +275,11 @@ public struct Instrument
     public List<Generator>? GlobalGenerators;
     public List<Modulator>? GlobalModulators;
     public List<InstrumentZone> InstrumentZones;
+
+    public override readonly string ToString()
+    {
+        return $"{Name}, {InstrumentZones.Count} Samples";
+    }
 }
 
 public struct InstrumentZone
@@ -272,6 +287,11 @@ public struct InstrumentZone
     public List<Generator> Generators;
     public List<Modulator>? Modulators;
     public Sample Sample;
+
+    public override readonly string ToString()
+    {
+        return Sample.Name;
+    }
 }
 
 public struct Sample
@@ -286,4 +306,9 @@ public struct Sample
     public sbyte PitchCorrection;
     public ushort SampleLink;
     public SampleLink SampleType;
+
+    public override readonly string ToString()
+    {
+        return Name;
+    }
 }
