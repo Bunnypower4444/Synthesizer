@@ -201,7 +201,9 @@ public static class Assets
 
 	public static void Dispose()
 	{
-		foreach (var soundfont in Soundfonts)
+		foreach (var soundfont in Soundfonts.Values)
 			soundfont.Dispose();
+		
+		Soundfonts.Clear();
 	}
 }

@@ -1,11 +1,9 @@
 
-// Enable this to run StreamSampleLoader tests
-// #define StreamSampleLoaderTests
-#if StreamSampleLoaderTests
-#define CustomMain
-#endif
+// Define StreamSampleLoaderTests in Synthesizer.csproj to run the tests
 
+#if StreamSampleLoaderTests
 using System.Diagnostics;
+#endif
 
 namespace Synthesizer;
 

@@ -4,7 +4,7 @@ namespace Synthesizer;
 public class Program
 {
     // If we are using a different Main, disable this one
-    #if CustomMain
+    #if !(StreamSampleLoaderTests)
 
     public static void Main(string[] args)
     {

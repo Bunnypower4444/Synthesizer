@@ -1,2 +1,2 @@
 global using Foster.Framework;
-global using System.Numerics;
+global using Foster.Audio;
