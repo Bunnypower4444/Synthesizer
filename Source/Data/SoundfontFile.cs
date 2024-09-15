@@ -10,8 +10,8 @@ public class SoundfontFile
     {
         // LEVEL 0
         public const string Info                    = "INFO";
-        public const string SampleData              = "sdta";
-        public const string PresetData              = "pdta";
+        public const string Samples              = "sdta";
+        public const string Presets              = "pdta";
         
         // LEVEL 1
         //  INFO
@@ -30,7 +30,7 @@ public class SoundfontFile
 
         //  sdta
         //      optional
-        public const string Samples                 = "smpl";
+        public const string SampleData                = "smpl";
         
         //  pdta
         public const string PresetHeaders           = "phdr";
