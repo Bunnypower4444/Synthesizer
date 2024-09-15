@@ -25,10 +25,10 @@ public class Soundfont : IDisposable
             new FileStream(file.FilePath, FileMode.Open, FileAccess.Read),
             file.SampleChunkStart, file.SampleChunkSize
         );
+
+        Banks = [];
         
         // Parse the presets
-        Presets = [];
-
         for (int iPreset = 0; iPreset < file.PresetHeaders.Count - 1; iPreset++)
         {
             var sfPreset = file.PresetHeaders[iPreset];
@@ -38,7 +38,6 @@ public class Soundfont : IDisposable
             {
                 Name = sfPreset.Name,
                 PresetNumber = sfPreset.PresetNumber,
-                BankNumber = sfPreset.BankNumber,
                 PresetZones = [],
                 Library = sfPreset.Library,
                 Genre = sfPreset.Genre,
@@ -91,7 +90,10 @@ public class Soundfont : IDisposable
                     throw new Exception("Preset zone must have at least one generator");
             }
 
-            Presets.Add(preset);
+            if (!Banks.ContainsKey(sfPreset.BankNumber))
+                Banks.Add(sfPreset.BankNumber, new() { BankNumber = sfPreset.BankNumber, Presets = [] });
+            
+            Banks[sfPreset.BankNumber].Presets.Add(preset);
         }
     }
 
@@ -181,7 +183,7 @@ public class Soundfont : IDisposable
     public string? Comments;
     public string? Tools;
 
-    public List<Preset> Presets;
+    public SortedDictionary<int, Bank> Banks;
 
     public ISampleLoader SampleLoader;
 
@@ -214,11 +216,21 @@ public class Soundfont : IDisposable
     } */
 }
 
-public struct Preset
+public struct Bank
+{
+    public ushort BankNumber;
+    public SortedSet<Preset> Presets;
+
+    public override readonly string ToString()
+    {
+        return $"Bank #{BankNumber}, {Presets.Count} Presets";
+    }
+}
+
+public struct Preset : IComparable<Preset>
 {
     public string Name; 
     public ushort PresetNumber;
-    public ushort BankNumber;
     public List<Generator>? GlobalGenerators;
     public List<Modulator>? GlobalModulators;
     public List<PresetZone> PresetZones;
@@ -226,9 +238,14 @@ public struct Preset
     public uint Genre;
     public uint Morphology;
 
+    public readonly int CompareTo(Preset other)
+    {
+        return PresetNumber - other.PresetNumber;
+    }
+
     public override readonly string ToString()
     {
-        return $"{Name}, Preset #{PresetNumber}, Bank #{BankNumber}, {PresetZones.Count} Instruments";
+        return $"{Name}, Preset #{PresetNumber}, {PresetZones.Count} Instruments";
     }
 }
 
