@@ -74,7 +74,8 @@ public enum ModulatorSourceType : byte
     PolyPressure = 10,
     ChannelPressure = 13,
     PitchWheel = 14,
-    PitchWheelSensitivity = 16
+    PitchWheelSensitivity = 16,
+    Link = 127
 }
 
 public enum ModulatorContinuityType : byte
