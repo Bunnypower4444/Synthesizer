@@ -288,12 +288,15 @@ public struct Generator
     }
 }
 
-[StructLayout(LayoutKind.Sequential, Pack = 1)]
+[StructLayout(LayoutKind.Explicit, Pack = 1)]
 public struct GenAmount
 {
+    [FieldOffset(0)]
     public ushort UShortValue;
-    public readonly short ShortValue => (short)UShortValue;
-    public readonly (byte Low, byte High) RangeValue => ((byte)(UShortValue >> 8), (byte)(UShortValue & 0xFF));
+    [FieldOffset(0)]
+    public readonly short ShortValue;
+    [FieldOffset(0)]
+    public readonly (byte Low, byte High) RangeValue;
 }
 
 public struct Instrument
