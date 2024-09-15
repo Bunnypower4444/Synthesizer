@@ -251,7 +251,12 @@ public struct Modulator
     public GeneratorType DestOper;
     public short Amount;
     public ModulatorType AmtSrcOper;
-    public Transform TransOper;
+    public Transform TransfOper;
+
+    public override readonly string ToString()
+    {
+        return $"Source: ({SrcOper}), Amount Source: ({AmtSrcOper}), Dest: {DestOper}, Transf: {TransfOper}, Amt: {Amount}";
+    }
 }
 
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
@@ -259,6 +264,11 @@ public struct Generator
 {
     public GeneratorType GenOper;
     public GenAmount GenAmount;
+
+    public override readonly string ToString()
+    {
+        return GenOper.ToString();
+    }
 }
 
 [StructLayout(LayoutKind.Sequential, Pack = 1)]

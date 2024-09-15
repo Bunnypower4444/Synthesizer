@@ -116,6 +116,11 @@ public record struct ModulatorType
     public readonly bool Direction => (Value & 0b1_00000000) > 0;
     public readonly bool Polarity => (Value & 0b10_00000000) > 0;
     public readonly ModulatorContinuityType Type => (ModulatorContinuityType)(Value >> 10);
+
+    public override readonly string ToString()
+    {
+        return $"Index: {SourceIndex}, CC: {ContinuousController}, Dir: {Direction}, Pol: {Polarity}, Type: {Type}";
+    }
 }
 
 public enum Transform : ushort
