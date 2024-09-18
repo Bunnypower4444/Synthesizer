@@ -12,9 +12,9 @@
     <SelfContained>true</SelfContained>
     <!--
     Constants: 
-     * StreamSampleLoaderTests
+     * StreamSampleLoaderTests: Run tests for loading/caching samples from a stream
     -->
-    <DefineConstants></DefineConstants>
+    <DefineConstants><!-- StreamSampleLoaderTests --></DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
