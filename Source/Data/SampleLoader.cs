@@ -219,7 +219,7 @@ public class StreamSampleLoader : ISampleLoader
             false
         );
 
-        using var loader = new StreamSampleLoader(stream, (uint)ByteIndex(6), (uint)ByteIndex(30));
+        using var loader = new StreamSampleLoader(stream, (uint)ByteIndex(6), 30);
 
         static Sample SampleFrom(uint start, uint end)
             => new() { StartIndex = start, EndIndex = end };
