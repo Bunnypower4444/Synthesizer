@@ -112,11 +112,31 @@ public record struct ModulatorType
     /// </summary>
     public ushort Value;
 
-    public readonly ModulatorSourceType SourceIndex => (ModulatorSourceType)(Value & 0b01111111);
-    public readonly bool ContinuousController => (Value & 0b10000000) > 0;
-    public readonly bool Direction => (Value & 0b1_00000000) > 0;
-    public readonly bool Polarity => (Value & 0b10_00000000) > 0;
-    public readonly ModulatorContinuityType Type => (ModulatorContinuityType)(Value >> 10);
+    public ModulatorSourceType SourceIndex
+    {
+        readonly get => (ModulatorSourceType)(Value & 0b01111111);
+        set => Value = (Value & ~0b01111111) | (ushort)value
+    }
+    public bool ContinuousController
+    {
+        readonly get => (Value & 0b10000000) > 0;
+        set => Value = (Value & ~0b10000000) | ((ushort)value << 7)
+    }
+    public bool Direction
+    {
+        readonly get => (Value & 0b1_0000000) > 0;
+        set => Value = (Value & ~0b1_0000000) | ((ushort)value << 8)
+    }
+    public bool Polarity
+    {
+        readonly get => (Value & 0b10_0000000) > 0;
+        set => Value = (Value & ~0b10_0000000) | ((ushort)value << 9)
+    }
+    public ModulatorSourceType SourceIndex
+    {
+        readonly get => (ModulatorContinuityType)(Value >> 10);
+        set => Value = (Value & ~0b11111100_00000000) | ((ushort)value << 10)
+    }
 
     public override readonly string ToString()
     {
