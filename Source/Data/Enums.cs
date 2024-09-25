@@ -115,32 +115,32 @@ public record struct ModulatorType
     public ModulatorSourceType SourceIndex
     {
         readonly get => (ModulatorSourceType)(Value & 0b01111111);
-        set => Value = (Value & ~0b01111111) | (ushort)value
+        set => Value = (ushort)((Value & ~0b01111111) | (ushort)value);
     }
     public bool ContinuousController
     {
         readonly get => (Value & 0b10000000) > 0;
-        set => Value = (Value & ~0b10000000) | ((ushort)value << 7)
+        set => Value = (ushort)((Value & ~0b10000000) | (Convert.ToUInt16(value) << 7));
     }
     public bool Direction
     {
         readonly get => (Value & 0b1_0000000) > 0;
-        set => Value = (Value & ~0b1_0000000) | ((ushort)value << 8)
+        set => Value = (ushort)((Value & ~0b1_0000000) | (Convert.ToUInt16(value) << 8));
     }
     public bool Polarity
     {
         readonly get => (Value & 0b10_0000000) > 0;
-        set => Value = (Value & ~0b10_0000000) | ((ushort)value << 9)
+        set => Value = (ushort)((Value & ~0b10_0000000) | (Convert.ToUInt16(value) << 9));
     }
-    public ModulatorSourceType SourceIndex
+    public ModulatorContinuityType ContinuityType
     {
         readonly get => (ModulatorContinuityType)(Value >> 10);
-        set => Value = (Value & ~0b11111100_00000000) | ((ushort)value << 10)
+        set => Value = (ushort)((Value & ~0b11111100_00000000) | ((ushort)value << 10));
     }
 
     public override readonly string ToString()
     {
-        return $"Index: {SourceIndex}, CC: {ContinuousController}, Dir: {Direction}, Pol: {Polarity}, Type: {Type}";
+        return $"Index: {SourceIndex}, CC: {ContinuousController}, Dir: {Direction}, Pol: {Polarity}, Type: {ContinuityType}";
     }
 }
 
