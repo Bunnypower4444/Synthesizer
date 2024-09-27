@@ -117,6 +117,13 @@ public record struct ModulatorType
         readonly get => (ModulatorSourceType)(Value & 0b01111111);
         set => Value = (ushort)((Value & ~0b01111111) | (ushort)value);
     }
+
+    public byte MidiSourceIndex
+    {
+        readonly get => (byte)(Value & 0b01111111);
+        set => Value = (ushort)((Value & ~0b01111111) | value);
+    }
+
     public bool ContinuousController
     {
         readonly get => (Value & 0b10000000) > 0;
