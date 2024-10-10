@@ -136,7 +136,7 @@ public class Synthesizer
             },
             DestOper = GeneratorType.Pan,
             // Since the absolute 0 of Pan is the center (500 * 0.1%),
-            // shift this down by 500 * 0.1% (thanks synthfont)
+            // shift this down by 500 * 0.1% (thanks fluidsynth)
             Amount = 500,
             AmtSrcOper = new() { Value = 0x0 },
             TransfOper = Transform.Linear
@@ -238,5 +238,39 @@ public class Synthesizer
         },
     ];
 
-    public Soundfont? Soundfont;
+    private readonly HashSet<Channel> channels = [];
+
+    // TODO: Sample cache
+
+    public void AddChannel(Channel channel)
+        => channels.Add(channel);
+
+    public Channel GetChannel(string channelName)
+        => channels.First(channel => channel.Name == channelName);
+
+    public Channel GetChannel(int channelNum)
+        => channels.First(channel => channel.Name == channelNum.ToString());
+
+    public void DeleteChannel(string channelName)
+        => channels.RemoveWhere(channel => channel.Name == channelName);
+
+    public void DeleteChannel(int channelNum)
+        => channels.RemoveWhere(channel => channel.Name == channelNum.ToString());
+
+    public void StartPlayback()
+    {
+        throw new NotImplementedException();
+    }
+
+    public void StopPlayback()
+    {
+        throw new NotImplementedException();
+    }
+
+    public byte[][] Update(float delta)
+    {
+        throw new NotImplementedException();
+    }
+
+
 }
