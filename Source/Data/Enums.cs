@@ -1,4 +1,6 @@
 
+using static Synthesizer.GeneratorType;
+
 namespace Synthesizer;
 
 public enum GeneratorType : ushort
@@ -64,6 +66,59 @@ public enum GeneratorType : ushort
     OverridingRootKey = 58,
     Unused5 = 59,
     EndOper = 60
+}
+
+public static class GeneratorExt
+{
+    public static bool IsInstrumentOnly(this GeneratorType generator)
+        => generator is
+            StartAddrsOffset or
+            EndAddrsOffset or
+            StartLoopAddrsOffset or
+            EndLoopAddrsOffset or
+            StartAddrsOffsetCoarseOffset or
+            EndAddrsCoarseOffset or
+            StartLoopAddrsCoarseOffset or
+            Keynum or
+            Velocity or
+            EndLoopAddrsCoarseOffset or
+            SampleModes or
+            ExclusiveClass or
+            OverridingRootKey;
+
+    public static bool IsNonRealTime(this GeneratorType generator)
+        => generator is
+            GeneratorType.Instrument or
+            KeyRange or
+            VelRange or
+            Keynum or
+            Velocity or
+            SampleID or
+            SampleModes or
+            ScaleTuning or
+            ExclusiveClass or
+            OverridingRootKey;
+
+    public static bool IsNotAllowed(this GeneratorType generator)
+        => generator is
+            Unused1 or
+            Unused2 or
+            Unused3 or
+            Unused4 or
+            Reserved1 or
+            Reserved2 or
+            Reserved3 or
+            Unused5 or
+            EndOper;
+}
+
+/// <summary>
+/// The mode that the sample will play in, supplied by an instrument generator.
+/// See <see cref="Defaults.Generators">Default Generators</see> if the number of options changes.
+/// </summary>
+public enum SampleMode : ushort
+{
+    NoLoop, LoopContinuous, UnusedNoLoop, LoopWhilePressed
 }
 
 public enum ModulatorSourceType : byte

@@ -69,7 +69,7 @@ public class Soundfont : IDisposable
                         Generators = pzoneGenerators[..^1],
                         Modulators = pzoneModulators,
                         // Parse the instrument
-                        Instrument = ParseInstrument(pzoneGenerators[^1].GenAmount.UShortValue, file)
+                        Instrument = ParseInstrument(pzoneGenerators[^1].GenAmount.AsUShort, file)
                     };
 
                     // Add it to the zones
@@ -133,7 +133,7 @@ public class Soundfont : IDisposable
                     Modulators = izoneModulators  
                 };
 
-                var sfSample = file.SampleHeaders[izoneGenerators[^1].GenAmount.UShortValue];
+                var sfSample = file.SampleHeaders[izoneGenerators[^1].GenAmount.AsUShort];
                 
                 // Get the info from the file
                 izone.Sample = new()
@@ -292,11 +292,16 @@ public struct Generator
 public struct GenAmount
 {
     [FieldOffset(0)]
-    public ushort UShortValue;
+    public ushort AsUShort;
     [FieldOffset(0)]
-    public readonly short ShortValue;
+    public readonly short AsShort;
     [FieldOffset(0)]
-    public readonly (byte Low, byte High) RangeValue;
+    public readonly (byte Low, byte High) AsRange;
+
+    public static explicit operator GenAmount(int value)
+    {
+        return new() { AsUShort = (ushort)value };
+    }
 }
 
 public struct Instrument
