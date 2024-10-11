@@ -13,8 +13,12 @@
     <!--
     Constants: 
      * StreamSampleLoaderTests: Run tests for loading/caching samples from a stream
+     * GenModOverrideTests: Run tests for modulator and generator precedence
     -->
-    <DefineConstants><!-- StreamSampleLoaderTests --></DefineConstants>
+    <DefineConstants>
+      <!-- StreamSampleLoaderTests -->
+      GenModOverrideTests
+    </DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>

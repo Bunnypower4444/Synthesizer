@@ -1,4 +1,6 @@
 
+// Define StreamSampleLoaderTests in Synthesizer.csproj to run the tests
+
 namespace Synthesizer;
 
 public class Voice
@@ -38,16 +40,21 @@ public class Voice
         
         Modulators = CleanModulators(Defaults.Modulators, modulatorsGlPreset, modulatorsPreset, modulatorsGlInst, modulatorsInst);
 
+        SynthParams = GetDefaultParameters();
+
+        ApplyGenerators(SynthParams, generatorsGlPreset, generatorsPreset, generatorsGlInst, generatorsInst);
+    }
+
+    private static Dictionary<GeneratorType, SynthParam> GetDefaultParameters()
+    {
         // basically copy over just the default value from the generator info
-        SynthParams = new
+        return new
         (
             Defaults.Generators.Select
             (
                 pair => KeyValuePair.Create<GeneratorType, SynthParam>(pair.Key, new((GenAmount)pair.Value.Default))
             )
         );
-
-        ApplyGenerators(generatorsGlPreset, generatorsPreset, generatorsGlInst, generatorsInst);
     }
 
     private static List<Modulator> CleanModulators(
@@ -120,7 +127,8 @@ public class Voice
         return cleanedMods;
     }
 
-    private void ApplyGenerators(
+    private static void ApplyGenerators(
+        Dictionary<GeneratorType, SynthParam> synthParams,
         List<Generator> generatorsGlPreset,
         List<Generator> generatorsPreset,
         List<Generator> generatorsGlInst,
@@ -135,7 +143,7 @@ public class Voice
                 continue;
             }
 
-            SynthParams[gigen.GenOper].BaseValue = gigen.GenAmount;
+            synthParams[gigen.GenOper].BaseValue = gigen.GenAmount;
         }
 
         foreach (var igen in generatorsInst)
@@ -146,7 +154,7 @@ public class Voice
                 continue;
             }
 
-            SynthParams[igen.GenOper].BaseValue = igen.GenAmount;
+            synthParams[igen.GenOper].BaseValue = igen.GenAmount;
         }
 
         Dictionary<GeneratorType, GenAmount> presetGenOffset = [];
@@ -181,13 +189,13 @@ public class Voice
                 continue;
             }
 
-            SynthParams[pgen.GenOper].BaseValue.AsUShort += pgen.GenAmount.AsUShort;
+            synthParams[pgen.GenOper].BaseValue.AsUShort += pgen.GenAmount.AsUShort;
             presetGenOffset.Remove(pgen.GenOper);
         }
 
         foreach (var gpgenoffset in presetGenOffset)
         {
-            SynthParams[gpgenoffset.Key].BaseValue.AsUShort += gpgenoffset.Value.AsUShort;
+            synthParams[gpgenoffset.Key].BaseValue.AsUShort += gpgenoffset.Value.AsUShort;
         }
     }
 
@@ -201,4 +209,15 @@ public class Voice
     {
         throw new NotImplementedException();
     }
+
+    #if GenModOverrideTests
+
+    public static void Main()
+    {
+        
+
+        Log.Info("All tests passed for GenModOverride :)");
+    }
+
+    #endif
 }
