@@ -109,7 +109,7 @@ public static class GeneratorExt
             Reserved2 or
             Reserved3 or
             Unused5 or
-            EndOper;
+            EndOper || (ushort)generator > (ushort)EndOper;
 }
 
 /// <summary>

@@ -55,10 +55,19 @@ public class Soundfont : IDisposable
                 
                 // Get the generators and modulators from the file
                 // Once again, use the difference in indices between zones to find out # of gens/mods
-                List<Generator> pzoneGenerators =
-                    file.PresetGenerators[sfPZone.GeneratorIndex..sfPZoneNext.GeneratorIndex];
+                List<Generator> pzoneGenerators = [];
                 List<Modulator> pzoneModulators =
                     file.PresetModulators[sfPZone.ModulatorIndex..sfPZoneNext.ModulatorIndex];
+
+                // Filter duplicate generators: new replaces old
+                foreach (var gen in file.PresetGenerators[sfPZone.GeneratorIndex..sfPZoneNext.GeneratorIndex])
+                {
+                    var index = pzoneGenerators.FindIndex(g => g.GenOper == gen.GenOper);
+                    if (index < 0)
+                        pzoneGenerators.Add(gen);
+                    else
+                        pzoneGenerators[index] = gen;
+                }
                 
                 // If the last generator is Instrument, use its value as the index to the instruments list
                 if (pzoneGenerators.Count > 0 && pzoneGenerators[^1].GenOper == GeneratorType.Instrument)
@@ -118,10 +127,19 @@ public class Soundfont : IDisposable
             
             // Get the generators and modulators from the file
             // Once again, use the difference in indices between zones to find out # of gens/mods
-            List<Generator> izoneGenerators =
-                file.InstrumentGenerators[sfIZone.GeneratorIndex..sfIZoneNext.GeneratorIndex];
+            List<Generator> izoneGenerators = [];
             List<Modulator> izoneModulators =
                 file.InstrumentModulators[sfIZone.ModulatorIndex..sfIZoneNext.ModulatorIndex];
+
+            // Filter duplicate generators: new replaces old
+            foreach (var gen in file.InstrumentGenerators[sfIZone.GeneratorIndex..sfIZoneNext.GeneratorIndex])
+            {
+                var index = izoneGenerators.FindIndex(g => g.GenOper == gen.GenOper);
+                if (index < 0)
+                    izoneGenerators.Add(gen);
+                else
+                    izoneGenerators[index] = gen;
+            }
             
             // If the last generator is SampleID, use its value as the index to the sample header list
             if (izoneGenerators.Count > 0 && izoneGenerators[^1].GenOper == GeneratorType.SampleID)
@@ -274,6 +292,10 @@ public struct Modulator
     {
         return $"Source: ({SrcOper}), Amount Source: ({AmtSrcOper}), Dest: {DestOper}, Transf: {TransfOper}, Amt: {Amount}";
     }
+
+    public readonly bool IdenticalTo(Modulator other)
+        => SrcOper == other.SrcOper && DestOper == other.DestOper &&
+        AmtSrcOper == other.AmtSrcOper && TransfOper == other.TransfOper;
 }
 
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
