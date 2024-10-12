@@ -301,6 +301,26 @@ public struct Modulator
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 public struct Generator
 {
+    public Generator(GeneratorType type, GenAmount amount)
+    {
+        GenOper = type; GenAmount = amount;
+    }
+
+    public Generator(GeneratorType type, ushort unsigned)
+    {
+        GenOper = type; GenAmount = new() { AsUShort = unsigned };
+    }
+
+    public Generator(GeneratorType type, short signed)
+    {
+        GenOper = type; GenAmount = new() { AsShort = signed };
+    }
+
+    public Generator(GeneratorType type, (byte Low, byte High) range)
+    {
+        GenOper = type; GenAmount = new() { AsRange = range };
+    }
+
     public GeneratorType GenOper;
     public GenAmount GenAmount;
 
@@ -316,9 +336,9 @@ public struct GenAmount
     [FieldOffset(0)]
     public ushort AsUShort;
     [FieldOffset(0)]
-    public readonly short AsShort;
+    public short AsShort;
     [FieldOffset(0)]
-    public readonly (byte Low, byte High) AsRange;
+    public (byte Low, byte High) AsRange;
 
     public static explicit operator GenAmount(int value)
     {

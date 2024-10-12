@@ -15,10 +15,7 @@
      * StreamSampleLoaderTests: Run tests for loading/caching samples from a stream
      * GenModOverrideTests: Run tests for modulator and generator precedence
     -->
-    <DefineConstants>
-      <!-- StreamSampleLoaderTests -->
-      GenModOverrideTests
-    </DefineConstants>
+    <DefineConstants><!-- StreamSampleLoaderTests --><!-- GenModOverrideTests --></DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
