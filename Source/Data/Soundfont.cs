@@ -374,25 +374,6 @@ public struct PresetZone
 }
 
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
-public struct Modulator
-{
-    public ModulatorType SrcOper;
-    public GeneratorType DestOper;
-    public short Amount;
-    public ModulatorType AmtSrcOper;
-    public Transform TransfOper;
-
-    public override readonly string ToString()
-    {
-        return $"Source: ({SrcOper}), Amount Source: ({AmtSrcOper}), Dest: {DestOper}, Transf: {TransfOper}, Amt: {Amount}";
-    }
-
-    public readonly bool IdenticalTo(Modulator other)
-        => SrcOper == other.SrcOper && DestOper == other.DestOper &&
-        AmtSrcOper == other.AmtSrcOper && TransfOper == other.TransfOper;
-}
-
-[StructLayout(LayoutKind.Sequential, Pack = 1)]
 public struct Range
 {
     public byte Low;
@@ -403,54 +384,6 @@ public struct Range
     
     public static implicit operator Range ((byte Low, byte High) tuple)
         => new() { Low = tuple.Low, High = tuple.High };
-}
-
-[StructLayout(LayoutKind.Sequential, Pack = 1)]
-public struct Generator
-{
-    public Generator(GeneratorType type, GenAmount amount)
-    {
-        GenOper = type; GenAmount = amount;
-    }
-
-    public Generator(GeneratorType type, ushort unsigned)
-    {
-        GenOper = type; GenAmount = new() { AsUShort = unsigned };
-    }
-
-    public Generator(GeneratorType type, short signed)
-    {
-        GenOper = type; GenAmount = new() { AsShort = signed };
-    }
-
-    public Generator(GeneratorType type, Range range)
-    {
-        GenOper = type; GenAmount = new() { AsRange = range };
-    }
-
-    public GeneratorType GenOper;
-    public GenAmount GenAmount;
-
-    public override readonly string ToString()
-    {
-        return GenOper.ToString();
-    }
-}
-
-[StructLayout(LayoutKind.Explicit, Pack = 1)]
-public struct GenAmount
-{
-    [FieldOffset(0)]
-    public ushort AsUShort;
-    [FieldOffset(0)]
-    public short AsShort;
-    [FieldOffset(0)]
-    public Range AsRange;
-
-    public static explicit operator GenAmount(int value)
-    {
-        return new() { AsUShort = (ushort)value };
-    }
 }
 
 public struct Instrument

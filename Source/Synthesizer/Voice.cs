@@ -45,169 +45,11 @@ public class Voice
         Key = key;
         Velocity = velocity;
         
-        Modulators = CleanModulators(Defaults.Modulators, modulatorsGlPreset, modulatorsPreset, modulatorsGlInst, modulatorsInst);
+        Modulators = Modulator.CleanModulators(Defaults.Modulators, modulatorsGlPreset, modulatorsPreset, modulatorsGlInst, modulatorsInst);
 
-        SynthParams = GetDefaultParameters();
+        SynthParams = Defaults.GetDefaultParameters();
 
-        ApplyGenerators(SynthParams, generatorsGlPreset, generatorsPreset, generatorsGlInst, generatorsInst);
-    }
-
-    private static Dictionary<GeneratorType, SynthParam> GetDefaultParameters()
-    {
-        // basically copy over just the default value from the generator info
-        return new
-        (
-            Defaults.Generators.Select
-            (
-                pair => KeyValuePair.Create<GeneratorType, SynthParam>(pair.Key, new((GenAmount)pair.Value.Default))
-            )
-        );
-    }
-
-    private static List<Modulator> CleanModulators(
-        Modulator[] modulatorsDefault,
-        List<Modulator> modulatorsGlPreset,
-        List<Modulator> modulatorsPreset,
-        List<Modulator> modulatorsGlInst,
-        List<Modulator> modulatorsInst)
-    {
-        List<Modulator> cleanedMods = [];
-
-        // Local replaces global (both inst and preset), then put them at the end of the
-        //  local modulators because why not
-        int numLocal = modulatorsInst.Count;
-        foreach (var glInst in modulatorsGlInst)
-        {
-            bool keep = true;
-            for (int i = 0; i < numLocal; i++)
-            {
-                if (modulatorsInst[i].IdenticalTo(glInst))
-                {
-                    keep = false;
-                    break;
-                }
-            }
-
-            if (keep)
-                modulatorsInst.Add(glInst);
-        }
-
-        numLocal = modulatorsPreset.Count;
-        foreach (var glPreset in modulatorsGlPreset)
-        {
-            bool keep = true;
-            for (int i = 0; i < numLocal; i++)
-            {
-                if (modulatorsPreset[i].IdenticalTo(glPreset))
-                {
-                    keep = false;
-                    break;
-                }
-            }
-
-            if (keep)
-                modulatorsPreset.Add(glPreset);
-        }
-
-        // Instrument modulators supersede default modulators
-        foreach (var defaultMod in modulatorsDefault)
-        {
-            bool keep = true;
-            foreach (var instMod in modulatorsInst)
-            {
-                if (instMod.IdenticalTo(defaultMod))
-                {
-                    keep = false;
-                    break;
-                }
-            }
-
-            // put into the final list
-            if (keep)
-                cleanedMods.Add(defaultMod);
-        }
-
-        // put everything else in the final list
-        cleanedMods.AddRange(modulatorsInst);
-        cleanedMods.AddRange(modulatorsPreset);
-
-        return cleanedMods;
-    }
-
-    private static void ApplyGenerators(
-        Dictionary<GeneratorType, SynthParam> synthParams,
-        List<Generator> generatorsGlPreset,
-        List<Generator> generatorsPreset,
-        List<Generator> generatorsGlInst,
-        List<Generator> generatorsInst)
-    {
-        // first do global inst, then local inst, so local can override global
-        foreach (var gigen in generatorsGlInst)
-        {
-            if (gigen.GenOper.IsNotAllowed() || gigen.GenOper.IsNonRealTime())
-            {
-                Log.Info($"Generator {gigen.GenOper} is not allowed");
-                continue;
-            }
-
-            synthParams[gigen.GenOper].BaseValue = gigen.GenAmount;
-        }
-
-        foreach (var igen in generatorsInst)
-        {
-            if (igen.GenOper.IsNotAllowed() || igen.GenOper.IsNonRealTime())
-            {
-                Log.Info($"Generator {igen.GenOper} is not allowed");
-                continue;
-            }
-
-            synthParams[igen.GenOper].BaseValue = igen.GenAmount;
-        }
-
-        // Presets offset the value provided by the default/instrument generators
-        // put the offsets from the global pre into a dictionary
-        Dictionary<GeneratorType, GenAmount> presetGenOffset = [];
-        foreach (var gpgen in generatorsGlPreset)
-        {
-            if (gpgen.GenOper.IsNotAllowed() || gpgen.GenOper.IsNonRealTime())
-            {
-                Log.Info($"Generator {gpgen.GenOper} is not allowed");
-                continue;
-            }
-
-            if (gpgen.GenOper.IsInstrumentOnly())
-            {
-                Log.Info($"Generator {gpgen.GenOper} is not allowed in a preset");
-                continue;
-            }
-
-            presetGenOffset[gpgen.GenOper] = gpgen.GenAmount;
-        }
-
-        // apply offsets from local preset, remove corresponding global pre (override)
-        foreach (var pgen in generatorsPreset)
-        {
-            if (pgen.GenOper.IsNotAllowed() || pgen.GenOper.IsNonRealTime())
-            {
-                Log.Info($"Generator {pgen.GenOper} is not allowed");
-                continue;
-            }
-
-            if (pgen.GenOper.IsInstrumentOnly())
-            {
-                Log.Info($"Generator {pgen.GenOper} is not allowed in a preset");
-                continue;
-            }
-
-            synthParams[pgen.GenOper].BaseValue.AsUShort += pgen.GenAmount.AsUShort;
-            presetGenOffset.Remove(pgen.GenOper);
-        }
-
-        // apply un-overriden global preset
-        foreach (var gpgenoffset in presetGenOffset)
-        {
-            synthParams[gpgenoffset.Key].BaseValue.AsUShort += gpgenoffset.Value.AsUShort;
-        }
+        Generator.ApplyGenerators(SynthParams, generatorsGlPreset, generatorsPreset, generatorsGlInst, generatorsInst);
     }
 
     public readonly Soundfont Soundfont;
@@ -217,6 +59,8 @@ public class Voice
 
     private readonly List<Modulator> Modulators;
     private readonly Dictionary<GeneratorType, SynthParam> SynthParams;
+
+    public float Time;
 
     public byte[] Update(float delta)
     {
@@ -231,8 +75,8 @@ public class Voice
         static int Default(GeneratorType genType)
             => Defaults.Generators[genType].Default;
 
-        var synthParams = GetDefaultParameters();
-        ApplyGenerators(
+        var synthParams = Defaults.GetDefaultParameters();
+        Generator.ApplyGenerators(
             synthParams,
             [new(DelayModEnv, 8), new(ReleaseModEnv, 8), new(SustainModEnv, 8), new(DecayModEnv, 8)],
             [new(DelayModEnv, 4), new(ReleaseModEnv, 4), new(AttackModEnv, 4), new(HoldModEnv, 4)],
@@ -274,7 +118,7 @@ public class Voice
             };
         }
 
-        var cleanedMods = CleanModulators(
+        var cleanedMods = Modulator.CleanModulators(
             [Mod(StartAddrsOffset, 0, 0, 16), Mod(EndAddrsOffset, 1, 1, 16), Mod(StartLoopAddrsOffset, 2, 2, 16), Mod(EndLoopAddrsOffset, 3, 3, 16)],
             [Mod(StartAddrsOffset, 0, 0, 8), Mod(EndAddrsOffset, 1, 2, 8), Mod(StartLoopAddrsOffset, 2, 3, 8), Mod(EndLoopAddrsOffset, 2, 3, 8)],
             [Mod(StartAddrsOffset, 0, 0, 4), Mod(EndAddrsOffset, 1, 1, 4), Mod(StartLoopAddrsOffset, 2, 3, 4), Mod(EndLoopAddrsOffset, 3, 2, 4)],

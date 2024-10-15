@@ -295,4 +295,16 @@ internal static class Defaults
         [ExclusiveClass]               = (     1,   127,      0),
         [OverridingRootKey]            = (     0,   127,     -1)
     };
+
+    public static Dictionary<GeneratorType, SynthParam> GetDefaultParameters()
+    {
+        // basically copy over just the default value from the generator info
+        return new
+        (
+            Defaults.Generators.Select
+            (
+                pair => KeyValuePair.Create<GeneratorType, SynthParam>(pair.Key, new((GenAmount)pair.Value.Default))
+            )
+        );
+    }
 }
