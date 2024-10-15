@@ -30,14 +30,76 @@ public class Channel
 
     private readonly List<Voice> voices = [];
 
-    public void NoteOn(int presetIndex, byte key, byte velocity)
+    /// <summary>
+    /// For a given preset, note, and velocity, plays, in
+    /// each instrument that plays in the respective ranges,
+    /// the samples for the respective ranges.
+    /// </summary>
+    /// <param name="presetNumber"></param>
+    /// <param name="key"></param>
+    /// <param name="velocity"></param>
+    public void NoteOn(int presetNumber, byte key, byte velocity)
     {
-        throw new NotImplementedException();        
+        static bool CheckRanges(byte value,
+            Range? local, Range? global)
+        {
+            return local != null ?
+                local.Value.ValueInRange(value)
+                : (global?.ValueInRange(value) ?? true);
+        }
+
+        var preset = Soundfont.Banks[Bank].GetPreset(presetNumber);
+        var glPresetZone = preset.GlobalZone;
+
+        foreach (var pzone in preset.PresetZones)
+        {
+            // Check against key and vel ranges
+            if (CheckRanges(key, pzone.KeyRange, glPresetZone?.KeyRange) &&
+                CheckRanges(velocity, pzone.VelRange, glPresetZone?.VelRange))
+            {
+                SearchSamples(pzone);
+            }
+        }
+
+        void SearchSamples(PresetZone pzone)
+        {
+            var instrument = pzone.Instrument;
+            var glInstZone = instrument.GlobalZone;
+
+            foreach (var izone in instrument.InstrumentZones)
+            {
+                // Check ranges
+                if (CheckRanges(key, izone.KeyRange, glInstZone?.KeyRange) &&
+                    CheckRanges(velocity, izone.VelRange, glInstZone?.VelRange))
+                {
+                    voices.Add(new Voice(
+                        Soundfont,
+                        presetNumber,
+                        izone.Sample,
+                        key, velocity,
+                        glPresetZone?.Generators ?? [],
+                        pzone.Generators,
+                        glInstZone?.Generators ?? [],
+                        izone.Generators,
+                        glPresetZone?.Modulators ?? [],
+                        pzone.Modulators ?? [],
+                        glInstZone?.Modulators ?? [],
+                        izone.Modulators ?? []
+                    ));
+                }
+            }
+        }
     }
 
-    public void NoteOff(int presetIndex, byte key, byte velocity)
+    public void NoteOff(int presetNumber, byte key, byte velocity)
     {
-        throw new NotImplementedException();        
+        foreach (var voice in voices)
+        {
+            if (voice.PresetNum == presetNumber && voice.Key == key)
+            {
+                
+            }
+        }
     }
 
     public byte[] Update(float delta)

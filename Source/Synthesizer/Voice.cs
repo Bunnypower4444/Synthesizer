@@ -29,7 +29,7 @@ public class Voice
         public float UnsignedTotal => BaseValue.AsUShort + ModValue;
     }
 
-    public Voice(Sample sample, byte key, byte velocity,
+    public Voice(Soundfont soundfont, int presetNum, Sample sample, byte key, byte velocity,
         List<Generator> generatorsGlPreset,
         List<Generator> generatorsPreset,
         List<Generator> generatorsGlInst,
@@ -39,6 +39,8 @@ public class Voice
         List<Modulator> modulatorsGlInst,
         List<Modulator> modulatorsInst)
     {
+        Soundfont = soundfont;
+        PresetNum = presetNum;
         Sample = sample;
         Key = key;
         Velocity = velocity;
@@ -162,6 +164,8 @@ public class Voice
             synthParams[igen.GenOper].BaseValue = igen.GenAmount;
         }
 
+        // Presets offset the value provided by the default/instrument generators
+        // put the offsets from the global pre into a dictionary
         Dictionary<GeneratorType, GenAmount> presetGenOffset = [];
         foreach (var gpgen in generatorsGlPreset)
         {
@@ -180,6 +184,7 @@ public class Voice
             presetGenOffset[gpgen.GenOper] = gpgen.GenAmount;
         }
 
+        // apply offsets from local preset, remove corresponding global pre (override)
         foreach (var pgen in generatorsPreset)
         {
             if (pgen.GenOper.IsNotAllowed() || pgen.GenOper.IsNonRealTime())
@@ -198,12 +203,15 @@ public class Voice
             presetGenOffset.Remove(pgen.GenOper);
         }
 
+        // apply un-overriden global preset
         foreach (var gpgenoffset in presetGenOffset)
         {
             synthParams[gpgenoffset.Key].BaseValue.AsUShort += gpgenoffset.Value.AsUShort;
         }
     }
 
+    public readonly Soundfont Soundfont;
+    public readonly int PresetNum;
     public readonly Sample Sample;
     public readonly byte Key, Velocity;
 

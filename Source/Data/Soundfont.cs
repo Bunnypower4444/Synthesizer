@@ -1,4 +1,5 @@
 
+using System.Collections;
 using System.Runtime.InteropServices;
 
 namespace Synthesizer;
@@ -68,17 +69,42 @@ public class Soundfont : IDisposable
                     else
                         pzoneGenerators[index] = gen;
                 }
+
+                // Instrument for the preset zone
+                int instrumentGenIndex = pzoneGenerators.FindIndex(
+                    g => g.GenOper == GeneratorType.Instrument);
+
+                // Key and velocity ranges
+                Range? keyRange = null, velRange = null;
+                int genStartOffset = 0;
+                if (pzoneGenerators.Count > 0 &&
+                    pzoneGenerators[0].GenOper == GeneratorType.KeyRange)
+                {
+                    keyRange = pzoneGenerators[0].GenAmount.AsRange;
+                    genStartOffset++;
+                    
+                    if (pzoneGenerators.Count > 1 &&
+                        pzoneGenerators[1].GenOper == GeneratorType.VelRange)
+                    {
+                        velRange = pzoneGenerators[1].GenAmount.AsRange;
+                        genStartOffset++;
+                    }
+                }
                 
                 // If the last generator is Instrument, use its value as the index to the instruments list
-                if (pzoneGenerators.Count > 0 && pzoneGenerators[^1].GenOper == GeneratorType.Instrument)
+                if (instrumentGenIndex >= 0)
                 {
                     var pzone = new PresetZone
                     {
-                        // Last generator is Instrument, so ignore it
-                        Generators = pzoneGenerators[..^1],
+                        // Ignore key/vel ranges and all generators after Instrument
+                        Generators = pzoneGenerators[genStartOffset..^instrumentGenIndex],
                         Modulators = pzoneModulators,
+                        KeyRange = keyRange,
+                        VelRange = velRange,
                         // Parse the instrument
-                        Instrument = ParseInstrument(pzoneGenerators[^1].GenAmount.AsUShort, file)
+                        Instrument = ParseInstrument(
+                            pzoneGenerators[instrumentGenIndex].GenAmount.AsUShort,
+                            file)
                     };
 
                     // Add it to the zones
@@ -90,19 +116,24 @@ public class Soundfont : IDisposable
                     // If the global zone is the only zone, throw an error--we need zones for the instruments
                     if (sfPreset.ZoneIndex + 1 == sfPresetNext.ZoneIndex)
                         throw new Exception("Preset must have at least one zone with an Instrument generator last");
-                   
+
                     // Set the global gens/mods
-                    preset.GlobalGenerators = pzoneGenerators;
-                    preset.GlobalModulators = pzoneModulators;
+                    preset.GlobalZone = new()
+                    {
+                        Generators = pzoneGenerators,
+                        Modulators = pzoneModulators,
+                        KeyRange = keyRange,
+                        VelRange = velRange
+                    };
                 }
                 else
                     throw new Exception("Preset zone must have at least one generator");
             }
 
             if (!Banks.ContainsKey(sfPreset.BankNumber))
-                Banks.Add(sfPreset.BankNumber, new() { BankNumber = sfPreset.BankNumber, Presets = [] });
+                Banks.Add(sfPreset.BankNumber, new() { BankNumber = sfPreset.BankNumber });
             
-            Banks[sfPreset.BankNumber].Presets.Add(preset);
+            Banks[sfPreset.BankNumber].AddPreset(preset);
         }
     }
 
@@ -140,15 +171,38 @@ public class Soundfont : IDisposable
                 else
                     izoneGenerators[index] = gen;
             }
+
+            // Sample for the instrument zone
+            int sampleGenIndex = izoneGenerators.FindIndex(
+                g => g.GenOper == GeneratorType.SampleID);
+
+            // Key and velocity ranges
+            Range? keyRange = null, velRange = null;
+            int genStartOffset = 0;
+            if (izoneGenerators.Count > 0 &&
+                izoneGenerators[0].GenOper == GeneratorType.KeyRange)
+            {
+                keyRange = izoneGenerators[0].GenAmount.AsRange;
+                genStartOffset++;
+                
+                if (izoneGenerators.Count > 1 &&
+                    izoneGenerators[1].GenOper == GeneratorType.VelRange)
+                {
+                    velRange = izoneGenerators[1].GenAmount.AsRange;
+                    genStartOffset++;
+                }
+            }
             
             // If the last generator is SampleID, use its value as the index to the sample header list
-            if (izoneGenerators.Count > 0 && izoneGenerators[^1].GenOper == GeneratorType.SampleID)
+            if (sampleGenIndex >= 0)
             {
-                var izone = new InstrumentZone()
+                var izone = new InstrumentZone
                 {
-                    // Last generator is SampleID, so ignore it
-                    Generators = izoneGenerators[..^1],
-                    Modulators = izoneModulators  
+                    // Ignore key/vel ranges and all generators after Instrument
+                    Generators = izoneGenerators[genStartOffset..^sampleGenIndex],
+                    Modulators = izoneModulators,
+                    KeyRange = keyRange,
+                    VelRange = velRange
                 };
 
                 var sfSample = file.SampleHeaders[izoneGenerators[^1].GenAmount.AsUShort];
@@ -167,7 +221,7 @@ public class Soundfont : IDisposable
                     SampleLink = sfSample.SampleLink,
                     SampleType = sfSample.SampleType
                 };
-                
+
                 // Add it to the zones
                 instrument.InstrumentZones.Add(izone);
             }
@@ -178,9 +232,14 @@ public class Soundfont : IDisposable
                 if (sfInstrument.ZoneIndex + 1 == sfInstrumentNext.ZoneIndex)
                     throw new Exception("Instrument must have at least one zone with a SampleID generator last");
 
-                // Set global gens/mods
-                instrument.GlobalGenerators = izoneGenerators;
-                instrument.GlobalModulators = izoneModulators;
+                // Set the global gens/mods
+                instrument.GlobalZone = new()
+                {
+                    Generators = izoneGenerators,
+                    Modulators = izoneModulators,
+                    KeyRange = keyRange,
+                    VelRange = velRange
+                };
             }
             else
                 throw new Exception("Instrument zone must have at least one generator");
@@ -237,20 +296,38 @@ public class Soundfont : IDisposable
 public struct Bank
 {
     public ushort BankNumber;
-    public SortedSet<Preset> Presets;
+    // This list should ALWAYS be sorted by preset number (for binary searching)
+    private readonly List<Preset> presets;
+
+    public readonly void AddPreset(Preset preset)
+    {
+        var index = Array.BinarySearch([.. presets], preset);
+        if (index >= 0)
+            presets[index] = preset;
+        else
+            presets.Insert(index, preset);
+    }
+
+    public readonly Preset GetPreset(int presetNumber)
+    {
+        var index = Array.BinarySearch(presets.ToArray(), presetNumber);
+        if (index >= 0)
+            return presets[index];
+        else
+            throw new Exception($"Preset #{presetNumber} not found");
+    }
 
     public override readonly string ToString()
     {
-        return $"Bank #{BankNumber}, {Presets.Count} Presets";
+        return $"Bank #{BankNumber}, {presets.Count} Presets";
     }
 }
 
-public struct Preset : IComparable<Preset>
+public struct Preset : IComparable<Preset>, IComparable<int>
 {
     public string Name; 
     public ushort PresetNumber;
-    public List<Generator>? GlobalGenerators;
-    public List<Modulator>? GlobalModulators;
+    public GlobalZone? GlobalZone;
     public List<PresetZone> PresetZones;
     public uint Library;
     public uint Genre;
@@ -261,16 +338,33 @@ public struct Preset : IComparable<Preset>
         return PresetNumber - other.PresetNumber;
     }
 
+    public readonly int CompareTo(int otherPresetNumber)
+    {
+        return PresetNumber - otherPresetNumber;
+    }
+
     public override readonly string ToString()
     {
         return $"{Name}, Preset #{PresetNumber}, {PresetZones.Count} Instruments";
     }
 }
 
+public struct GlobalZone
+{
+    public List<Generator>? Generators;
+    public List<Modulator>? Modulators;
+    public Range? KeyRange;
+    public Range? VelRange;
+}
+
 public struct PresetZone
 {
     public List<Generator> Generators;
     public List<Modulator>? Modulators;
+    // These should be null because if set, local ranges override global ranges
+    // (local generators override global generators)
+    public Range? KeyRange;
+    public Range? VelRange;
     public Instrument Instrument;
 
     public override readonly string ToString()
@@ -299,6 +393,19 @@ public struct Modulator
 }
 
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
+public struct Range
+{
+    public byte Low;
+    public byte High;
+
+    public readonly bool ValueInRange(byte value)
+        => value >= Low && value <= High;
+    
+    public static implicit operator Range ((byte Low, byte High) tuple)
+        => new() { Low = tuple.Low, High = tuple.High };
+}
+
+[StructLayout(LayoutKind.Sequential, Pack = 1)]
 public struct Generator
 {
     public Generator(GeneratorType type, GenAmount amount)
@@ -316,7 +423,7 @@ public struct Generator
         GenOper = type; GenAmount = new() { AsShort = signed };
     }
 
-    public Generator(GeneratorType type, (byte Low, byte High) range)
+    public Generator(GeneratorType type, Range range)
     {
         GenOper = type; GenAmount = new() { AsRange = range };
     }
@@ -338,7 +445,7 @@ public struct GenAmount
     [FieldOffset(0)]
     public short AsShort;
     [FieldOffset(0)]
-    public (byte Low, byte High) AsRange;
+    public Range AsRange;
 
     public static explicit operator GenAmount(int value)
     {
@@ -349,8 +456,7 @@ public struct GenAmount
 public struct Instrument
 {
     public string Name;
-    public List<Generator>? GlobalGenerators;
-    public List<Modulator>? GlobalModulators;
+    public GlobalZone? GlobalZone;
     public List<InstrumentZone> InstrumentZones;
 
     public override readonly string ToString()
@@ -363,6 +469,8 @@ public struct InstrumentZone
 {
     public List<Generator> Generators;
     public List<Modulator>? Modulators;
+    public Range? KeyRange;
+    public Range? VelRange;
     public Sample Sample;
 
     public override readonly string ToString()
