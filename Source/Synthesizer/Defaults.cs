@@ -1,6 +1,6 @@
 
 using static Synthesizer.GeneratorType;
-using DefaultGenInfo = (int Min, int Max, int Default);
+using DefaultGenInfo = (short Min, short Max, short Default);
 
 namespace Synthesizer;
 
@@ -281,8 +281,6 @@ internal static class Defaults
         [ReleaseVolEnv]                = (-12000,  8000, -12000),
         [KeynumToVolEnvHold]           = ( -1200,  1200,      0),
         [KeynumToVolEnvDecay]          = ( -1200,  1200,      0),
-        [KeyRange]                     = (     0,   127, 0xFF00),
-        [VelRange]                     = (     0,   127, 0xFF00),
         [StartLoopAddrsCoarseOffset]   = (     0,     0,      0),
         [Keynum]                       = (     0,   127,     -1),
         [Velocity]                     = (     0,   127,     -1),
@@ -298,16 +296,19 @@ internal static class Defaults
 
     static Defaults()
     {
-        defaultParameters = new SynthParam[(int)EndOper];
+        // basically copy over just the default value from the generator info
+        defaultParameters = new SynthParams();
 
-        
+        foreach (var (type, info) in Generators)
+        {
+            defaultParameters[type] = new((GenAmount)info.Default);
+        }
     }
 
-    private static SynthParam[] defaultParameters;
+    private static readonly SynthParams defaultParameters;
 
-    public static SynthParam[] GetDefaultParameters()
+    public static SynthParams GetDefaultParameters()
     {
-        // basically copy over just the default value from the generator info
-        
+        return defaultParameters.Clone();
     }
 }

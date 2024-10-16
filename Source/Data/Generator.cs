@@ -35,7 +35,7 @@ public struct Generator
     }
 
     public static void ApplyGenerators(
-        Dictionary<GeneratorType, SynthParam> synthParams,
+        SynthParams synthParams,
         List<Generator> generatorsGlPreset,
         List<Generator> generatorsPreset,
         List<Generator> generatorsGlInst,
@@ -61,7 +61,7 @@ public struct Generator
                 continue;
             }
 
-            synthParams[igen.GenOper].BaseValue = igen.GenAmount;
+            synthParams[(int)igen.GenOper].BaseValue = igen.GenAmount;
         }
 
         // Presets offset the value provided by the default/instrument generators
@@ -99,14 +99,14 @@ public struct Generator
                 continue;
             }
 
-            synthParams[pgen.GenOper].BaseValue.AsUShort += pgen.GenAmount.AsUShort;
+            synthParams[(int)pgen.GenOper].BaseValue.AsUShort += pgen.GenAmount.AsUShort;
             presetGenOffset.Remove(pgen.GenOper);
         }
 
         // apply un-overriden global preset
         foreach (var gpgenoffset in presetGenOffset)
         {
-            synthParams[gpgenoffset.Key].BaseValue.AsUShort += gpgenoffset.Value.AsUShort;
+            synthParams[(int)gpgenoffset.Key].BaseValue.AsUShort += gpgenoffset.Value.AsUShort;
         }
     }
 }

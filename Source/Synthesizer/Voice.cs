@@ -10,27 +10,8 @@ namespace Synthesizer;
 
 public class Voice
 {
-    public enum Status
+    public enum PlayingStatus
     { On, Released, Off }
-
-    public class SynthParam
-    {
-        public SynthParam(GenAmount baseValue)
-        {
-            BaseValue = baseValue;
-        }
-
-        public SynthParam(GenAmount baseValue, float modValue)
-        {
-            BaseValue = baseValue;
-            ModValue = modValue;
-        }
-
-        public GenAmount BaseValue;
-        public float ModValue;
-        public float SignedTotal => BaseValue.AsShort + ModValue;
-        public float UnsignedTotal => BaseValue.AsUShort + ModValue;
-    }
 
     public Voice(Soundfont soundfont, int presetNum, Sample sample, byte key, byte velocity,
         List<Generator> generatorsGlPreset,
@@ -61,10 +42,10 @@ public class Voice
     public readonly byte Key, Velocity;
 
     private readonly List<Modulator> Modulators;
-    private readonly SynthParam[] SynthParams;
+    private readonly SynthParams SynthParams;
 
     public float Time;
-    public Status Status = Status.On;
+    public PlayingStatus Status = PlayingStatus.On;
 
     public byte[] Update(float delta)
     {
@@ -74,7 +55,7 @@ public class Voice
 
     public void Release()
     {
-        Status = Status.Released;
+        Status = PlayingStatus.Released;
     }
 
     #if GenModOverrideTests
