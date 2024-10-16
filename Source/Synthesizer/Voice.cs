@@ -10,6 +10,9 @@ namespace Synthesizer;
 
 public class Voice
 {
+    public enum Status
+    { On, Released, Off }
+
     public class SynthParam
     {
         public SynthParam(GenAmount baseValue)
@@ -58,13 +61,20 @@ public class Voice
     public readonly byte Key, Velocity;
 
     private readonly List<Modulator> Modulators;
-    private readonly Dictionary<GeneratorType, SynthParam> SynthParams;
+    private readonly SynthParam[] SynthParams;
 
     public float Time;
+    public Status Status = Status.On;
 
     public byte[] Update(float delta)
     {
+        Time += delta;
         throw new NotImplementedException();
+    }
+
+    public void Release()
+    {
+        Status = Status.Released;
     }
 
     #if GenModOverrideTests

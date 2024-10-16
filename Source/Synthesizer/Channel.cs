@@ -97,7 +97,7 @@ public class Channel
         {
             if (voice.PresetNum == presetNumber && voice.Key == key)
             {
-                
+                voice.Release();
             }
         }
     }
