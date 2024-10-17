@@ -95,7 +95,8 @@ public class Channel
     {
         foreach (var voice in voices)
         {
-            if (voice.PresetNum == presetNumber && voice.Key == key)
+            if (voice.Status == Voice.PlayingStatus.On &&
+                voice.PresetNum == presetNumber && voice.Key == key)
             {
                 voice.Release();
             }

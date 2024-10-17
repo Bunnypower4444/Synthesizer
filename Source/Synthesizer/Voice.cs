@@ -58,6 +58,11 @@ public class Voice
         Status = PlayingStatus.Released;
     }
 
+    public void Stop()
+    {
+        Status = PlayingStatus.Off;
+    }
+
     #if GenModOverrideTests
 
     public static void Main()
