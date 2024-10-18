@@ -425,6 +425,9 @@ public struct Sample
     public ushort SampleLink;
     public SampleLink SampleType;
 
+    public float Duration
+        => (EndIndex - StartIndex) / SampleRate;
+
     public override readonly string ToString()
     {
         return Name;

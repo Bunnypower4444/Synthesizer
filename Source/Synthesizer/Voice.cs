@@ -28,6 +28,9 @@ public class Voice
         Sample = sample;
         Key = key;
         Velocity = velocity;
+
+        if (!Soundfont.SampleLoader.SampleIsCached(Sample))
+            Soundfont.SampleLoader.PreloadSample(Sample);
         
         Modulators = Modulator.CleanModulators(Defaults.Modulators, modulatorsGlPreset, modulatorsPreset, modulatorsGlInst, modulatorsInst);
 
@@ -47,9 +50,16 @@ public class Voice
     public float Time;
     public PlayingStatus Status = PlayingStatus.On;
 
-    public byte[] Update(float delta)
+    public byte[]? Update(float delta)
     {
+        if (Status == PlayingStatus.Off)
+            return null;
+
         Time += delta;
+
+        var startIndex = (uint)(Time * Sample.SampleRate + Sample.StartIndex);
+        // Soundfont.SampleLoader.GetSampleData();
+
         throw new NotImplementedException();
     }
 
