@@ -28,7 +28,7 @@ public class Channel
     public float PitchWheelSensitivity = 400;
     public ushort Bank = 0;
 
-    private readonly List<Voice> voices = [];
+    private readonly LinkedList<Voice> voices = [];
 
     /// <summary>
     /// For a given preset, note, and velocity, plays, in
@@ -72,7 +72,7 @@ public class Channel
                 if (CheckRanges(key, izone.KeyRange, glInstZone?.KeyRange) &&
                     CheckRanges(velocity, izone.VelRange, glInstZone?.VelRange))
                 {
-                    voices.Add(new Voice(
+                    voices.AddLast(new Voice(
                         Soundfont,
                         presetNumber,
                         izone.Sample,
@@ -105,6 +105,23 @@ public class Channel
 
     public byte[] Update(float delta)
     {
+
+
+        // iterate through the linked list nodes
+        for (LinkedListNode<Voice>? node = voices.First; node != null; node = node.Next)
+        {
+            var voice = node.Value;
+            
+            // if voice is done playing, remove
+            if (voice.Status == Voice.PlayingStatus.Off)
+            {
+                voices.Remove(node);
+                continue;
+            }
+
+
+        }
+
         throw new NotImplementedException();
     }
 }

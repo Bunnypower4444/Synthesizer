@@ -1,5 +1,6 @@
 ## To-do list:
-* Change list of voices to use LinkedList
+* Remove terminal records in Soundfont
+* ~~Change list of voices to use LinkedList~~
 * Change lists of modulators to use LinkedList
 * Change lists of generators to use LinkedList
 * Figure out how to have audio with multiple sample rates playing at the same time

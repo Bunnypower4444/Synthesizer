@@ -55,12 +55,11 @@ public class Voice
         if (Status == PlayingStatus.Off)
             return null;
 
-        Time += delta;
-
         var startIndex = (uint)(Time * Sample.SampleRate + Sample.StartIndex);
-        // Soundfont.SampleLoader.GetSampleData();
+        Time += delta;
+        var endIndex = (uint)(Time * Sample.SampleRate + Sample.StartIndex);
 
-        throw new NotImplementedException();
+        return Soundfont.SampleLoader.GetSampleData(Sample with { StartIndex = startIndex, EndIndex = endIndex });
     }
 
     public void Release()
